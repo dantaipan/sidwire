@@ -38,6 +38,22 @@ juce::AudioProcessorValueTreeState::ParameterLayout SidBridgeProcessor::createLa
     layout.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "velocity_amount", 1 }, "Velocity Amount",
                                                            0, 100, (int) std::lround (ec.velocityAmount * 100),
                                                            juce::AudioParameterIntAttributes().withLabel ("%")));
+    auto choices = [] (const std::vector<std::string>& v) {
+        juce::StringArray a;
+        for (auto& s : v) a.add (s);
+        return a;
+    };
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "voice_mode", 1 }, "Voice Mode",
+                                                              choices (voiceModeNames()), choices (voiceModeNames()).indexOf (ec.mode)));
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "arp_rate", 1 }, "Arp Rate",
+                                                              choices (arpRateNames()), choices (arpRateNames()).indexOf (ec.arpRate)));
+    layout.add (std::make_unique<juce::AudioParameterChoice> (juce::ParameterID { "arp_pattern", 1 }, "Arp Pattern",
+                                                              choices (arpPatternNames()), choices (arpPatternNames()).indexOf (ec.arpPattern)));
+    layout.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "arp_octaves", 1 }, "Arp Octaves", 1, 3, ec.arpOctaves));
+    layout.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "arp_gate", 1 }, "Arp Gate", 5, 100,
+                                                           (int) std::lround (ec.arpGate * 100), juce::AudioParameterIntAttributes().withLabel ("%")));
+    layout.add (std::make_unique<juce::AudioParameterInt> (juce::ParameterID { "arp_bpm", 1 }, "Arp Tempo", 40, 240,
+                                                           (int) ec.bpm, juce::AudioParameterIntAttributes().withLabel ("BPM")));
     return layout;
 }
 
@@ -64,6 +80,12 @@ static BridgeParams makeParams (juce::AudioProcessorValueTreeState& s)
     bp.filterMode = s.getParameter ("filter_mode");
     bp.velocity = s.getParameter ("velocity");
     bp.velocityAmount = s.getParameter ("velocity_amount");
+    bp.voiceMode = s.getParameter ("voice_mode");
+    bp.arpRate = s.getParameter ("arp_rate");
+    bp.arpPattern = s.getParameter ("arp_pattern");
+    bp.arpOctaves = s.getParameter ("arp_octaves");
+    bp.arpGate = s.getParameter ("arp_gate");
+    bp.arpBpm = s.getParameter ("arp_bpm");
     return bp;
 }
 
@@ -123,6 +145,12 @@ void SidBridgeProcessor::prepareToPlay (double sampleRate, int blockSize)
 void SidBridgeProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+    double bpm = 0;   // the host's tempo for the arpeggiator (none in the standalone app)
+    if (auto* ph = getPlayHead())
+        if (auto pos = ph->getPosition())
+            if (auto b = pos->getBpm())
+                bpm = *b;
+    controller->setHostBpm (bpm);
     buffer.clear();   // the sound comes out of the C64 ...
     controller->audioStream().render (buffer, 0, buffer.getNumSamples());   // ... and back, if "C64 audio" is on
     for (const auto meta : midi)

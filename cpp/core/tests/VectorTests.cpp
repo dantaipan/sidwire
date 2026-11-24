@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include <algorithm>
 #include <cstdio>
 #include <fstream>
 #include <map>
@@ -75,6 +76,16 @@ struct Runner
         c.profile = loadProfile (dir + "/" + prof + ".toml");
         c.profile.channel = std::stoi (conf["channel"]);
         if (conf.count ("vel")) c.velocity = conf["vel"];
+        if (conf.count ("detune")) c.unisonDetune = std::stoi (conf["detune"]);
+        if (conf.count ("arate")) c.arpRate = conf["arate"];
+        if (conf.count ("apat"))
+        {
+            c.arpPattern = conf["apat"];
+            std::replace (c.arpPattern.begin(), c.arpPattern.end(), '_', ' ');
+        }
+        if (conf.count ("aoct")) c.arpOctaves = std::stoi (conf["aoct"]);
+        if (conf.count ("agate")) c.arpGate = std::stoi (conf["agate"]) / 100.0;
+        if (conf.count ("bpm")) c.bpm = std::stoi (conf["bpm"]);
         if (conf.count ("vamt")) c.velocityAmount = std::stoi (conf["vamt"]) / 100.0;
         std::vector<Preset> presets;
         if (conf["presets"] == "1")
@@ -88,8 +99,8 @@ struct Runner
         std::istringstream in (line);
         std::string k;
         in >> k;
-        int a = 0, b = 0, c = 0;
-        in >> a >> b >> c;
+        int a = 0, b = 0, c = 0, d = 0, f = 0;
+        in >> a >> b >> c >> d >> f;
         if (k == "init")        e->initChip();
         else if (k == "flush")  { fl->flush(); return t.take(); }
         else if (k == "on")     e->handle (MidiEvent::noteOn (a, b, c));
@@ -103,6 +114,10 @@ struct Runner
         else if (k == "panic")  e->panic();
         else if (k == "clock")  fakeTime = a / 1000.0;   // ms
         else if (k == "service") e->service();
+        else if (k == "mclock")  e->handle (MidiEvent::clock());
+        else if (k == "mstart")  e->handle (MidiEvent::start());
+        else if (k == "vmode")   e->setVoiceMode (voiceModeNames().at ((size_t) a));
+        else if (k == "arpset")  e->setArp (arpRateNames().at ((size_t) a), arpPatternNames().at ((size_t) b), c, d / 100.0, (double) f);
         else if (k == "velmode") e->setVelocity (std::vector<std::string> { "off", "sustain", "volume" }.at ((size_t) a), b / 100.0);
         else FAIL ("unknown vector event: " << line);
         return {};

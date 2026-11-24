@@ -19,7 +19,11 @@ notes_port = ""            # override the profile's MIDI input names ("" = use t
 controls_port = ""
 
 [engine]
-mode = "poly"              # "poly" (3 voices/SID) or "mono" (one voice per part)
+mode = "poly"              # voice mode: poly | mono | unison | octave | fifth | chord | arp
+                           #   poly: a free voice per note (3 per SID); mono: one voice, legato
+                           #   unison: all voices on each note, detuned; octave / fifth / chord:
+                           #   each note stacked (+12 / +7 / +7 and +12); arp: see [arp]
+unison_detune = 8          # cents between unison voices
 layout = "poly"            # "poly": one part over all SIDs (6 voices with 2 SIDs)
                            # "split": MIDI ch1 -> SID 1, ch2 -> SID 2, each with its own patch
 presets = "presets.toml"   # program change N selects preset N
@@ -35,6 +39,15 @@ velocity = "sustain"       # how hard you play: "sustain" = each note's sustain 
 velocity_amount = 1.0      # 0.0 = every note at full level ... 1.0 = level follows velocity fully
 knobs_target = "all"       # which part the controls-port knobs and the actions change: "all" or 1, 2
 filter_cycle = ["lp", "bp", "hp", "off"]   # filter modes the filter_mode_next action steps through
+
+# Arpeggiator (mode = "arp"): the held notes play in turn on one voice.
+# Steps follow MIDI clock from the keyboard port when it arrives, otherwise bpm.
+[arp]
+rate = "1/16"              # 1/4 | 1/8 | 1/8T | 1/16 | 1/16T | 1/32
+pattern = "up"             # up | down | up-down | random | as played
+octaves = 1                # 1-3
+gate = 0.5                 # how long each step sounds, as a fraction of the step
+bpm = 120
 
 # Patch loaded at startup (each part starts with this; program change / --preset override it)
 [patch]

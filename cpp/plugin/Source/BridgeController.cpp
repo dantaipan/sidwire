@@ -75,6 +75,7 @@ BridgeController::BridgeController (BridgeParams p, std::vector<Preset> presets)
         writebackParams[i] = params.ints[i];
     writebackParams[kNumParams] = params.waveform;
     writebackParams[kNumParams + 1] = params.filterMode;
+    writebackParams[kNumParams + 2] = params.voiceMode;
     for (auto& w : writeback)
         w.store (-1.0f);
     startThread (juce::Thread::Priority::high);
@@ -413,6 +414,8 @@ std::optional<MidiEvent> BridgeController::toEvent (const juce::MidiMessage& m)
     if (m.isController())    return MidiEvent::cc (ch, m.getControllerNumber(), m.getControllerValue());
     if (m.isPitchWheel())    return MidiEvent::bend (ch, m.getPitchWheelValue() - 8192);
     if (m.isProgramChange()) return MidiEvent::program (ch, m.getProgramChangeNumber());
+    if (m.isMidiClock())     return MidiEvent::clock();
+    if (m.isMidiStart())     return MidiEvent::start();
     return std::nullopt;
 }
 
@@ -567,7 +570,22 @@ bool BridgeController::connect()
     profileNotice = profileError.isEmpty() ? juce::String() : profileError + " (using the generic profile)";
     cfg.layout = s.layout.toStdString();
     cfg.knobsTarget = s.knobsTarget;
-    cfg.mode = s.mode.toStdString();
+    auto choiceOf = [] (juce::RangedAudioParameter* p, const std::vector<std::string>& names, const std::string& fallback) {
+        if (p == nullptr)
+            return fallback;
+        auto i = (size_t) std::lround (p->convertFrom0to1 (p->getValue()));
+        return i < names.size() ? names[i] : fallback;
+    };
+    auto intOf = [] (juce::RangedAudioParameter* p, int fallback) {
+        return p != nullptr ? (int) std::lround (p->convertFrom0to1 (p->getValue())) : fallback;
+    };
+    cfg.mode = choiceOf (params.voiceMode, voiceModeNames(), "poly");
+    cfg.arpRate = choiceOf (params.arpRate, arpRateNames(), "1/16");
+    cfg.arpPattern = choiceOf (params.arpPattern, arpPatternNames(), "up");
+    cfg.arpOctaves = intOf (params.arpOctaves, 1);
+    cfg.arpGate = intOf (params.arpGate, 50) / 100.0;
+    cfg.bpm = hostBpm.load() > 0 ? hostBpm.load() : (double) intOf (params.arpBpm, 120);
+    lastArpKey = {};
     // start from the plugin's current parameter values
     for (int i = 0; i < kNumParams; ++i)
         if (auto* p = params.ints[(size_t) i])
@@ -586,6 +604,8 @@ bool BridgeController::connect()
     auto fi = (int) (std::find (filterModeNames().begin(), filterModeNames().end(), cfg.patch.filterMode) - filterModeNames().begin());
     lastParam[(size_t) kNumParams] = seenParam[(size_t) kNumParams] = wi;
     lastParam[(size_t) kNumParams + 1] = seenParam[(size_t) kNumParams + 1] = fi;
+    auto vi = (int) (std::find (voiceModeNames().begin(), voiceModeNames().end(), cfg.mode) - voiceModeNames().begin());
+    lastParam[(size_t) kNumParams + 2] = seenParam[(size_t) kNumParams + 2] = vi;
 
     audioError = {};
     if (s.hearC64 && ! audio.start (hostOnly.toStdString(), o.port, o.password, audioError))
@@ -820,7 +840,7 @@ void BridgeController::syncParams()
     }
 
     auto syncChoice = [&] (size_t slot, juce::RangedAudioParameter* p, const std::vector<std::string>& names,
-                           const std::string& engineValue, bool wave) {
+                           const std::string& engineValue, const std::function<void (const std::string&)>& apply) {
         if (p == nullptr)
             return;
         int v = (int) std::lround (p->convertFrom0to1 (p->getValue()));
@@ -830,11 +850,7 @@ void BridgeController::syncParams()
             if (! isEcho (slot, v) && v >= 0 && v < (int) names.size())
             {
                 echoes[slot].clear();
-                PatchUpdate u;
-                if (wave) u.waveform = names[(size_t) v];
-                else      u.filterMode = names[(size_t) v];
-                for (auto& part : engine->parts)
-                    engine->applyPatch (part, u);
+                apply (names[(size_t) v]);
             }
         }
         int ev = (int) (std::find (names.begin(), names.end(), engineValue) - names.begin());
@@ -845,8 +861,44 @@ void BridgeController::syncParams()
                 post (slot, ev);
         }
     };
-    syncChoice ((size_t) kNumParams, params.waveform, waveformNames(), part0.patch.waveform, true);
-    syncChoice ((size_t) kNumParams + 1, params.filterMode, filterModeNames(), part0.patch.filterMode, false);
+    auto patchAll = [this] (auto setter) {
+        return [this, setter] (const std::string& v) {
+            PatchUpdate u;
+            setter (u, v);
+            for (auto& part : engine->parts)
+                engine->applyPatch (part, u);
+        };
+    };
+    syncChoice ((size_t) kNumParams, params.waveform, waveformNames(), part0.patch.waveform,
+                patchAll ([] (PatchUpdate& u, const std::string& v) { u.waveform = v; }));
+    syncChoice ((size_t) kNumParams + 1, params.filterMode, filterModeNames(), part0.patch.filterMode,
+                patchAll ([] (PatchUpdate& u, const std::string& v) { u.filterMode = v; }));
+    syncChoice ((size_t) kNumParams + 2, params.voiceMode, voiceModeNames(), engine->voiceMode(),
+                [this] (const std::string& v) { engine->setVoiceMode (v); });
+
+    // arpeggiator settings: host/GUI -> engine; tempo from the host when it has one
+    auto choiceOf = [] (juce::RangedAudioParameter* p, const std::vector<std::string>& names, const std::string& fallback) {
+        if (p == nullptr)
+            return fallback;
+        auto i = (size_t) std::lround (p->convertFrom0to1 (p->getValue()));
+        return i < names.size() ? names[i] : fallback;
+    };
+    auto intOf = [] (juce::RangedAudioParameter* p, int fallback) {
+        return p != nullptr ? (int) std::lround (p->convertFrom0to1 (p->getValue())) : fallback;
+    };
+    auto arpRateNow = choiceOf (params.arpRate, arpRateNames(), "1/16");
+    auto pattern = choiceOf (params.arpPattern, arpPatternNames(), "up");
+    int octaves = intOf (params.arpOctaves, 1), gate = intOf (params.arpGate, 50);
+    auto key = arpRateNow + "|" + pattern + "|" + std::to_string (octaves) + "|" + std::to_string (gate);
+    if (key != lastArpKey)
+    {
+        lastArpKey = key;
+        engine->setArp (arpRateNow, pattern, octaves, gate / 100.0);
+    }
+    double tempo = hostBpm.load() > 0 ? hostBpm.load() : (double) intOf (params.arpBpm, 120);
+    if (std::abs (tempo - engine->bpm()) > 1e-6)
+        engine->setBpm (tempo);
+    tempoNow = engine->bpm();
 }
 
 void BridgeController::publishStatus()
@@ -926,7 +978,8 @@ void BridgeController::run()
             drainEvents();
             learnTick (now);
             syncParams();
-            if (now - lastService > 0.02)
+            // the arpeggiator steps in service(): every couple of ms then, else every 20 ms
+            if (now - lastService > (engine->voiceMode() == "arp" ? 0.002 : 0.02))
             {
                 engine->service();   // mute released voices (6581 leak hum)
                 lastService = now;

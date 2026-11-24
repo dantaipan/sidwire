@@ -26,6 +26,7 @@ private:
     void setChoice (const char* paramId, int index);
     int choice (const char* paramId) const;
     void clickWave (int i);
+    void layoutVoiceBar (juce::Rectangle<int> bar);
     void clickMode (int i);
     static juce::String badgeFor (const juce::String& target, const BridgeStatus& st, bool& learning);
 
@@ -46,6 +47,15 @@ private:
     ui::Segmented velocity { { "Off", "Sustain", "Volume" } };
     juce::Slider amount;
     ui::VoiceStrip voices;
+
+    // voice mode bar
+    juce::Label voiceLabel { {}, "VOICE MODE" }, voiceHint, tempoLabel;
+    ui::Segmented voiceModes { { "Poly", "Mono", "Unison", "Octave", "Fifth", "Chord", "Arp" } };
+    juce::ComboBox arpRate, arpPattern;
+    ui::Segmented arpOctaves { { "1 oct", "2 oct", "3 oct" } };
+    juce::Slider arpGate, arpBpm;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> rateAttachment, patternAttachment;
+    bool arpShown = false, relayoutNeeded = false;
 
     juce::TextButton goSetup { "Go to Setup" };
     bool showOverlay = false;

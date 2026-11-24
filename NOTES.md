@@ -496,3 +496,41 @@ The player was uninstalled from the C64 (IRQ vector back at $EA31).
     settings go in a git-ignored `config.local.toml`, read on top. `bridge.py` with no address
     runs Find. Docs and tests use neutral examples.
   - JUCE is a git submodule (`cpp/external/JUCE`, juce-framework/JUCE tag 9.0.4, commit 3fb5cbc).
+
+## Voice modes and arpeggiator — 2026-11-24
+- The user asked for SID SYNTH-style voice modes. `[engine] mode` / `set_voice_mode`: poly, mono,
+  unison, octave, fifth, chord, arp.
+  - Every part now always has all its voices (3 per SID). The mode only decides how notes use
+    them, so it can change while playing; sounding notes are released on a change.
+  - Each voice has an `offset` (semitones): a stack interval (+12 / +7 / +7 and +12) or the
+    unison detune (+/- `unison_detune` cents, alternating: 0, +d, -d, +2d, ...). Bend keeps the
+    offsets.
+  - Stacks take a free voice per interval (released longest ago, else the oldest stolen), so
+    chord polyphony = voices / 3.
+- Arpeggiator (`[arp]` rate / pattern / octaves / gate / bpm):
+  - The held notes (pedal-held too) play on voice 1 of the part, re-gated each step. The first
+    note plays at once.
+  - Patterns: up, down, up-down (bounces without repeating the ends), random (LCG
+    `x = (x*1103515245 + 12345) & 0x7FFFFFFF`, seeded 1 at each start, so Python and C++ match),
+    and as played. 1-3 octaves.
+  - Steps run from `service()` (bridge.py every 3 ms in arp, the plugin every 2 ms) at
+    60/bpm/steps-per-beat. A stall over 1 s skips ahead instead of bursting.
+  - MIDI clock: 24 pulses per quarter note; a step every 24/steps-per-beat pulses, and the gate
+    off after round(pulses x gate). Start resets the pattern. While clock arrives (a pulse in the
+    last 0.5 s), time-based stepping waits.
+  - Plugin tempo: the host's BPM from the playhead, else the `arp_bpm` parameter.
+- Vectors: events `mclock`, `mstart`, `vmode`, `arpset`; config keys `detune`, `arate`, `apat`,
+  `aoct`, `agate`, `bpm`. Every earlier scenario stayed byte-identical (mono included, despite
+  the voice-allocation change).
+  - Now 53 hand-written + 76 randomized scenarios, 10,414 writes. The C++ engine is identical.
+- Plugin:
+  - Parameters `voice_mode` (two-way, so the profile action shows in the host), `arp_rate`,
+    `arp_pattern`, `arp_octaves`, `arp_gate`, `arp_bpm`.
+  - The Play tab has a Voice mode bar (arp controls in arp mode, a one-line description
+    otherwise). Mono moved there from Setup.
+  - Host MIDI clock and start reach the engine.
+- Hardware (C64U, bridge.py over DMA):
+  - Arp 1/8 at 120 BPM, C4 E4 G4 held: it played C4 E4 G4 repeating, steps 249.5 ms apart
+    (expected 250, sd 15 ms).
+  - Chord on A2: 110 / 164 / 220 Hz (A2 E3 A3).
+- Tests: Python 155, C++ 79; auval and pluginval pass.

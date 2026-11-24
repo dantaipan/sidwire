@@ -16,8 +16,11 @@ There are two front ends, and both use the same engine:
 
 ## What it does
 
-- Polyphony: 3 voices per SID, so 6 voices with two SIDs. A new note takes a free voice,
-  and if none is free it steals the oldest note.
+- Seven voice modes: **poly** (3 voices per SID, 6 with two; the oldest note is stolen),
+  **mono** (legato), **unison** (every voice, detuned), **octave**, **fifth** and **chord**
+  (each note stacked +12 / +7 / +7 and +12), and an **arpeggiator** (1/4 to 1/32 including
+  triplets; up, down, up-down, random, as played; 1-3 octaves; gate). The arpeggiator follows
+  MIDI clock when it arrives, otherwise the DAW's tempo (plugin) or a BPM setting.
 - Split layout: MIDI channel 1 plays SID 1 and channel 2 plays SID 2, each with its own patch.
 - Any MIDI keyboard: a **controller profile** says what its knobs, faders, pads and buttons do
   (see [Your controller](#your-controller-profiles)). Profiles for a generic keyboard and the
@@ -95,7 +98,8 @@ To use it:
    on Play.
 2. **Play** has the preset bar and the sound in four sections: oscillator (light two waveforms
    to combine them), filter (LP / BP / HP, none = off), envelope (with the real times), and
-   output (volume and velocity). The knobs are ordinary automatable parameters: MIDI CCs, your
+   output (volume and velocity). The **Voice mode** bar below picks poly, mono, unison,
+   octave, fifth, chord or arp (rate, pattern, octaves, gate and tempo appear for arp). The knobs are ordinary automatable parameters: MIDI CCs, your
    controller and presets move them too, so the host can record them.
 3. **MIDI learn**: right-click a knob, a filter or waveform button, a preset arrow, or Silence,
    choose "MIDI learn...", and move a control on your keyboard. It's saved to your own copy of

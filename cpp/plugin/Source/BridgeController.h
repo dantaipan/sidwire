@@ -84,6 +84,12 @@ struct BridgeParams
     juce::RangedAudioParameter* filterMode = nullptr;                     // choice: msid::filterModeNames()
     juce::RangedAudioParameter* velocity = nullptr;                       // choice: velocityModes()
     juce::RangedAudioParameter* velocityAmount = nullptr;                 // int 0..100 (%)
+    juce::RangedAudioParameter* voiceMode = nullptr;                      // choice: msid::voiceModeNames()
+    juce::RangedAudioParameter* arpRate = nullptr;                        // choice: msid::arpRateNames()
+    juce::RangedAudioParameter* arpPattern = nullptr;                     // choice: msid::arpPatternNames()
+    juce::RangedAudioParameter* arpOctaves = nullptr;                     // int 1..3
+    juce::RangedAudioParameter* arpGate = nullptr;                        // int 5..100 (%)
+    juce::RangedAudioParameter* arpBpm = nullptr;                         // int 40..240: when the host gives no tempo
 };
 
 /// Velocity response choices, in parameter order (msid::Engine::setVelocity names).
@@ -107,6 +113,10 @@ public:
     bool pushHostMidi (const juce::MidiMessage&) noexcept;
     /// True when a direct note port is in use: host MIDI is then ignored (avoids doubled notes).
     bool usingDirectNotes() const noexcept { return directNotes.load(); }
+
+    /// Audio thread: the host's tempo (0 = none / not playing in a host). The arpeggiator uses it.
+    void setHostBpm (double bpm) noexcept { hostBpm = bpm; }
+    double tempoInUse() const noexcept { return tempoNow.load(); }
 
     /// Standalone app: there is no host MIDI, so an empty notes port means "auto": the profile's
     /// notes port (or the first MIDI input that isn't the controls port).
@@ -202,6 +212,8 @@ private:
     std::atomic<bool> reconnectRequested { true };
     std::atomic<bool> directNotes { false };
     std::atomic<bool> standaloneApp { false };
+    std::atomic<double> hostBpm { 0.0 }, tempoNow { 120.0 };
+    std::string lastArpKey;
 
     // host MIDI: lock-free single producer (audio) / single consumer (bridge thread)
     static constexpr int kFifoSize = 4096;
@@ -231,18 +243,18 @@ private:
     juce::String audioError;
     std::unique_ptr<msid::Flusher> flusher;
     std::unique_ptr<msid::Engine> engine;
-    // per slot: kNumParams ints, then waveform, then filter mode
-    std::array<int, msid::kNumParams + 2> lastParam {};   // engine value last seen
-    std::array<int, msid::kNumParams + 2> seenParam {};   // parameter value last seen
+    // per slot: kNumParams ints, then waveform, filter mode, voice mode
+    std::array<int, msid::kNumParams + 3> lastParam {};   // engine value last seen
+    std::array<int, msid::kNumParams + 3> seenParam {};   // parameter value last seen
     int lockFd = -1;
     double lastRetry = 0;
     double rateT0 = 0;
     int rateW0 = 0;
     double rate = 0;
 
-    std::array<juce::RangedAudioParameter*, msid::kNumParams + 2> writebackParams {};
-    std::array<std::atomic<float>, msid::kNumParams + 2> writeback;   // plain value, -1 = none
-    std::array<std::vector<int>, msid::kNumParams + 2> echoes;        // values posted, not yet seen back
+    std::array<juce::RangedAudioParameter*, msid::kNumParams + 3> writebackParams {};
+    std::array<std::atomic<float>, msid::kNumParams + 3> writeback;   // plain value, -1 = none
+    std::array<std::vector<int>, msid::kNumParams + 3> echoes;        // values posted, not yet seen back
 
     mutable std::mutex statusMutex;
     BridgeStatus st;

@@ -222,6 +222,8 @@ def main() -> None:
     ap.add_argument("--find", action="store_true", help="look for C64 Ultimates on the local network and exit")
     ap.add_argument("--dry-run", action="store_true", help="log SID writes instead of sending")
     ap.add_argument("--mono", action="store_true")
+    ap.add_argument("--mode", choices=["poly", "mono", "unison", "octave", "fifth", "chord", "arp"],
+                    help="voice mode (overrides [engine] mode)")
     ap.add_argument("--split", action="store_true", help="MIDI ch1 -> SID 1, ch2 -> SID 2, ...")
     ap.add_argument("--preset", help="startup preset (name or number) for every part")
     ap.add_argument("--ui", action="store_true", help="live terminal status view")
@@ -278,6 +280,8 @@ def main() -> None:
         return
     if a.mono:
         cfg["engine"]["mode"] = "mono"
+    if a.mode:
+        cfg["engine"]["mode"] = a.mode
     if a.split:
         cfg["engine"]["layout"] = "split"
     ctl = cfg["controller"]
@@ -367,11 +371,11 @@ def main() -> None:
                       refresh_per_second=10, transient=False):
                 while True:
                     engine.service()
-                    time.sleep(0.03)
+                    time.sleep(0.003 if engine.voice_mode == "arp" else 0.03)   # the arp steps in service()
         else:
             while True:
                 engine.service()
-                time.sleep(0.03)
+                time.sleep(0.003 if engine.voice_mode == "arp" else 0.03)   # the arp steps in service()
     except KeyboardInterrupt:
         print("\nPanic + shutdown")
     finally:

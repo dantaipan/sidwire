@@ -28,6 +28,10 @@ const std::vector<std::string>& waveformNames();
 std::optional<int> waveformBits (const std::string& name);
 const std::vector<std::string>& filterModeNames();
 std::optional<int> filterModeBits (const std::string& name);
+/// Voice modes (engine.py VOICE_MODES): poly mono unison octave fifth chord arp.
+const std::vector<std::string>& voiceModeNames();
+const std::vector<std::string>& arpRateNames();      // 1/4 1/8 1/8T 1/16 1/16T 1/32
+const std::vector<std::string>& arpPatternNames();   // up down up-down random "as played"
 
 struct Patch
 {
@@ -60,7 +64,12 @@ std::vector<Preset> loadPresets (const std::string& path);   // empty if the fil
 
 struct EngineConfig
 {
-    std::string mode = "poly";      // poly | mono
+    std::string mode = "poly";      // voice mode: voiceModeNames()
+    double unisonDetune = 8;        // cents
+    std::string arpRate = "1/16", arpPattern = "up";
+    int arpOctaves = 1;
+    double arpGate = 0.5;           // of a step
+    double bpm = 120;               // when no MIDI clock arrives
     std::string layout = "poly";    // poly | split
     bool legato = true;
     bool hardRestart = false;
@@ -76,7 +85,7 @@ struct EngineConfig
 
 struct MidiEvent
 {
-    enum class Type { NoteOn, NoteOff, ControlChange, PitchBend, ProgramChange };
+    enum class Type { NoteOn, NoteOff, ControlChange, PitchBend, ProgramChange, Clock, Start };
     Type type = Type::NoteOn;
     int channel = 0;   // 0-15
     int data1 = 0;     // note / controller / program / bend (-8192..8191)
@@ -87,6 +96,8 @@ struct MidiEvent
     static MidiEvent cc (int ch, int num, int val) { return { Type::ControlChange, ch, num, val }; }
     static MidiEvent bend (int ch, int pitch) { return { Type::PitchBend, ch, pitch, 0 }; }
     static MidiEvent program (int ch, int prog) { return { Type::ProgramChange, ch, prog, 0 }; }
+    static MidiEvent clock() { return { Type::Clock, 0, 0, 0 }; }
+    static MidiEvent start() { return { Type::Start, 0, 0, 0 }; }
 };
 
 struct Slot
@@ -97,6 +108,7 @@ struct Slot
     long long onTime = 0, offTime = 0;
     double offAt = 0;          // clock time of the note-off (seconds, for muteAfterRelease)
     double vel = 1.0;          // velocity scale of the note (velocity "sustain")
+    double offset = 0.0;       // semitones above the note: a stack interval or unison detune
 };
 
 struct Part
@@ -114,6 +126,13 @@ struct Part
     std::array<std::optional<double>, kNumParams> norm {};   // fractional encoder positions
     double vel = 1.0;          // velocity scale of the last note (velocity "volume")
     int presetIndex = -1;      // last preset selected (preset_next / preset_prev)
+    std::vector<std::pair<int, int>> arpNotes;   // held (note, velocity), in order
+    bool arpRunning = false;
+    int arpIndex = -1;
+    double arpNext = 0;
+    std::optional<double> arpGateOff;
+    int arpPulse = 0;
+    uint64_t arpRng = 1;
 };
 
 class Engine
@@ -137,6 +156,13 @@ public:
     void controlChange (int cc, int value, Part& part, int channel0 = -1);
     void setPedal (Part& part, bool down);
     void programChange (int program, Part& part);
+    /// Change the voice mode while running; sounding notes are released first.
+    void setVoiceMode (const std::string& mode);
+    const std::string& voiceMode() const { return vmode; }
+    std::string cycleVoiceMode();
+    void setArp (const std::string& rate, const std::string& pattern, int octaves, double gate, std::optional<double> bpm = {});
+    void setBpm (double bpm);
+    double bpm() const { return tempo; }
     /// Replace the controller profile while running (MIDI learn). Notes keep playing.
     void setProfile (const Profile& p);
     /// Next filter mode in filterCycle for the knob target parts; returns it.
@@ -176,6 +202,18 @@ private:
     void releaseVoice (Slot& slot);
     void info (const std::string& s) { if (log) log (s); }
     std::vector<const Control*> match (Port port, Control::Kind kind, int channel0, int number = 0) const;
+    void setOffsets();
+    double arpStepLen() const;
+    bool clockActive (double t) const { return t - clockSeenAt < 0.5; }
+    std::vector<std::pair<int, int>> arpSequence (const Part& part) const;
+    void arpStep (Part& part, double t);
+    void arpNoteOn (Part& part, int note, int velocity);
+    void arpNoteOff (Part& part, int note);
+    void arpService (double t);
+    void clockPulse();
+    void clockStart();
+    std::vector<Slot*> monoVoices (Part& part);
+    Slot& allocStack (Part& part, int note, int interval);
     void applyControl (const Control& c, int value, const std::vector<Part*>& targets);
     void action (const std::string& name);
     std::vector<Part*> knobParts();
@@ -184,7 +222,10 @@ private:
     EngineConfig cfg;
     std::vector<Preset> presetList;
     std::vector<int> knobPartIdx;   // part indices
-    bool mono;
+    std::string vmode = "poly";
+    std::string arpRateName = "1/16", arpPatternName = "up";
+    int arpOct = 1;
+    double arpGateFrac = 0.5, tempo = 120.0, clockSeenAt = -1e300;
     std::string velMode = "off";
     double velAmount = 0.0;
     std::map<std::pair<int, int>, Slot*> slotAt;   // (sid, voice) -> slot

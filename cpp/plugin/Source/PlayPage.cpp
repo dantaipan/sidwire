@@ -136,6 +136,47 @@ PlayPage::PlayPage (SidBridgeProcessor& p) : proc (p)
     attachments.push_back (std::make_unique<SliderAttachment> (proc.apvts, "velocity_amount", amount));
     addAndMakeVisible (voices);
 
+    voiceLabel.setFont (ui::font (11.0f, true));
+    voiceLabel.setColour (juce::Label::textColourId, label);
+    addAndMakeVisible (voiceLabel);
+    voiceModes.onChange = [this] (int i) { setChoice ("voice_mode", i); };
+    voiceModes.setTooltip ("How notes use the SID voices (right-click: MIDI learn \"next voice mode\")");
+    for (int i = 0; i < 7; ++i)
+        voiceModes.chip (i).onRightClick = [this, i] { learnMenu ("action:voice_mode_next", voiceModes.chip (i)); };
+    addAndMakeVisible (voiceModes);
+    voiceHint.setFont (ui::font (12.0f));
+    voiceHint.setColour (juce::Label::textColourId, label);
+    addAndMakeVisible (voiceHint);
+    for (auto& rateName : arpRateNames()) arpRate.addItem (rateName, arpRate.getNumItems() + 1);
+    for (auto& patternName : arpPatternNames()) arpPattern.addItem (patternName, arpPattern.getNumItems() + 1);
+    arpRate.setTooltip ("Arpeggio rate (steps follow MIDI clock when it arrives, else the tempo)");
+    arpPattern.setTooltip ("Arpeggio pattern");
+    rateAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "arp_rate", arpRate);
+    patternAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "arp_pattern", arpPattern);
+    arpOctaves.onChange = [this] (int i) {
+        if (auto* prm = proc.apvts.getParameter ("arp_octaves"))
+            prm->setValueNotifyingHost (prm->convertTo0to1 ((float) (i + 1)));
+    };
+    arpOctaves.setTooltip ("Octaves the arpeggio climbs");
+    for (auto* sl : { &arpGate, &arpBpm })
+    {
+        sl->setSliderStyle (juce::Slider::LinearBar);
+        sl->setColour (juce::Slider::textBoxTextColourId, bright);
+        sl->setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    }
+    arpGate.setTooltip ("Arpeggio gate: how long each step sounds");
+    arpBpm.setTooltip ("Arpeggio tempo when there is no MIDI clock or host tempo");
+    attachments.push_back (std::make_unique<SliderAttachment> (proc.apvts, "arp_gate", arpGate));
+    attachments.push_back (std::make_unique<SliderAttachment> (proc.apvts, "arp_bpm", arpBpm));
+    arpGate.setTextValueSuffix ("% gate");
+    arpBpm.setTextValueSuffix (" BPM");
+    tempoLabel.setFont (ui::font (11.5f));
+    tempoLabel.setColour (juce::Label::textColourId, label);
+    tempoLabel.setJustificationType (juce::Justification::centred);
+    for (juce::Component* c : { (juce::Component*) &arpRate, (juce::Component*) &arpPattern, (juce::Component*) &arpOctaves,
+                                (juce::Component*) &arpGate, (juce::Component*) &arpBpm, (juce::Component*) &tempoLabel })
+        addChildComponent (*c);
+
     goSetup.onClick = [this] { if (onGoToSetup) onGoToSetup(); };
     goSetup.getProperties().set ("border", (int) selBorder.getARGB());
     goSetup.setColour (juce::TextButton::buttonColourId, selBg);
@@ -295,6 +336,33 @@ void PlayPage::refresh (const BridgeStatus& st, bool setupDone)
     for (int i = 0; i < 3; ++i)
         modes[(size_t) i].setSelected (modeParts.contains (kModeNames[i]));
     velocity.setSelected (choice ("velocity"));
+
+    // voice mode bar
+    int vm = choice ("voice_mode");
+    voiceModes.setSelected (vm);
+    static const char* hints[] = { "Each note takes a free voice: 3 per SID.",
+                                   "One voice. Overlapping notes glide (legato).",
+                                   "Every voice plays the note, slightly detuned: thick.",
+                                   "Each note with the octave above.",
+                                   "Each note with the fifth above.",
+                                   "Each note with the fifth and the octave above.",
+                                   "" };
+    voiceHint.setText (hints[juce::jlimit (0, 6, vm)], juce::dontSendNotification);
+    arpOctaves.setSelected (juce::jlimit (0, 2, choice ("arp_octaves") - 1));
+    bool hostTempo = proc.bridge().isStandalone() == false && std::abs (proc.bridge().tempoInUse() - arpBpm.getValue()) > 0.01;
+    tempoLabel.setText ("Host " + juce::String (juce::roundToInt (proc.bridge().tempoInUse())) + " BPM", juce::dontSendNotification);
+    bool arp = vm == 6;
+    if (arp != arpShown || tempoLabel.isVisible() != (arp && hostTempo))
+    {
+        arpShown = arp;
+        voiceHint.setVisible (! arp);
+        for (juce::Component* c : { (juce::Component*) &arpRate, (juce::Component*) &arpPattern, (juce::Component*) &arpOctaves,
+                                    (juce::Component*) &arpGate })
+            c->setVisible (arp);
+        arpBpm.setVisible (arp && ! hostTempo);
+        tempoLabel.setVisible (arp && hostTempo);
+        relayoutNeeded = true;
+    }
     amountLabel.setText ("Amount   " + juce::String (juce::roundToInt (amount.getValue())) + "%", juce::dontSendNotification);
 
     auto val = [this] (Param p) { return juce::roundToInt (knobs[(size_t) p]->slider().getValue()); };
@@ -353,12 +421,17 @@ void PlayPage::refresh (const BridgeStatus& st, bool setupDone)
         button = "Setup";
     }
     else
-        line = (st.layout == "split" ? juce::String ("Split ch1 / ch2") : juce::String ("Poly")) + kDot
-             + juce::String ((int) st.voices.size()) + " voices" + kDot + st.profileName;
+    {
+        static const char* modeNames[] = { "Poly", "Mono", "Unison", "Octave", "Fifth", "Chord", "Arp" };
+        line = juce::String (modeNames[juce::jlimit (0, 6, choice ("voice_mode"))])
+             + (st.layout == "split" ? kDot + "split ch1 / ch2" : juce::String())
+             + kDot + juce::String ((int) st.voices.size()) + " voices" + kDot + st.profileName;
+    }
     info.setText (line, juce::dontSendNotification);
     info.setColour (juce::Label::textColourId, colour);
     bannerButton.setButtonText (button);
-    bool relayout = bannerButton.isVisible() != button.isNotEmpty();
+    bool relayout = relayoutNeeded || bannerButton.isVisible() != button.isNotEmpty();
+    relayoutNeeded = false;
     bannerButton.setVisible (button.isNotEmpty());
     bannerButton.onClick = [this, button] {
         if (button == "Cancel") proc.bridge().cancelLearn();
@@ -412,7 +485,9 @@ void PlayPage::resized()
     r.removeFromTop (12);
 
     voices.setBounds (r.removeFromBottom (48));
-    r.removeFromBottom (12);
+    r.removeFromBottom (10);
+    layoutVoiceBar (r.removeFromBottom (36));
+    r.removeFromBottom (10);
 
     auto row = r;
     osc.setBounds (row.removeFromLeft (196));
@@ -465,4 +540,23 @@ void PlayPage::resized()
 
     auto ov = getLocalBounds().reduced (20).withTrimmedTop (54).withTrimmedBottom (60);
     goSetup.setBounds (ov.withSizeKeepingCentre (160, 40).translated (0, 40));
+}
+
+void PlayPage::layoutVoiceBar (juce::Rectangle<int> bar)
+{
+    voiceLabel.setBounds (bar.removeFromLeft (84));
+    voiceModes.setBounds (bar.removeFromLeft (412));
+    bar.removeFromLeft (14);
+    voiceHint.setBounds (bar);
+    arpRate.setBounds (bar.removeFromLeft (76));
+    bar.removeFromLeft (6);
+    arpPattern.setBounds (bar.removeFromLeft (104));
+    bar.removeFromLeft (6);
+    arpOctaves.setBounds (bar.removeFromLeft (112));
+    bar.removeFromLeft (6);
+    auto rest = bar;
+    arpGate.setBounds (rest.removeFromLeft (rest.getWidth() / 2 - 3));
+    rest.removeFromLeft (6);
+    arpBpm.setBounds (rest);
+    tempoLabel.setBounds (rest);
 }

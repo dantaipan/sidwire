@@ -17,7 +17,7 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
     playing.setStep (3, false, "(optional)");
 
     for (auto* l : { &addressLabel, &passwordLabel, &basesLabel, &viaLabel, &videoLabel, &profileLabel, &notePortLabel,
-                     &encoderPortLabel, &layoutLabel, &modeLabel, &targetLabel, &presetsLabel })
+                     &encoderPortLabel, &layoutLabel, &targetLabel, &presetsLabel })
     {
         l->setFont (ui::font (11.5f));
         l->setColour (juce::Label::textColourId, dim);
@@ -99,10 +99,9 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
 
     // 3: how you play
     layout.onChange = [this] (int) { pushSettings(); };
-    mode.onChange = [this] (int) { pushSettings(); };
     target.onChange = [this] (int) { pushSettings(); };
     target.setTooltip ("In split layout: which SID the controls-port knobs and the pads change");
-    for (auto* c : { &layout, &mode, &target })
+    for (auto* c : { &layout, &target })
         addAndMakeVisible (*c);
     loadPresets.onClick = [this] { choosePresetsFile(); };
     builtinPresets.onClick = [this] {
@@ -219,7 +218,6 @@ void SetupPage::loadSettings()
     via.setSelected (s.transport == "http" ? 1 : 0);
     video.setSelected (s.video == "NTSC" ? 1 : 0);
     layout.setSelected (s.layout == "split" ? 1 : 0);
-    mode.setSelected (s.mode == "mono" ? 1 : 0);
     target.setSelected (juce::jlimit (0, 2, s.knobsTarget));
     fillPortBox (notePort, notesNoneLabel(), s.notePort);
     fillPortBox (encoderPort, "Auto (from the profile)", s.encoderPort);
@@ -238,7 +236,6 @@ void SetupPage::pushSettings()
     s.transport = via.selected() == 1 ? "http" : "dma";
     s.video = video.selected() == 1 ? "NTSC" : "PAL";
     s.layout = layout.selected() == 1 ? "split" : "poly";
-    s.mode = mode.selected() == 1 ? "mono" : "poly";
     s.knobsTarget = target.selected();
     s.notePort = portFrom (notePort);
     s.encoderPort = portFrom (encoderPort);
@@ -579,7 +576,6 @@ void SetupPage::resized()
     // 3
     c = playing.content();
     place (c, layoutLabel, layout, 30);
-    place (c, modeLabel, mode, 30);
     place (c, targetLabel, target, 30);
     presetsLabel.setBounds (c.removeFromTop (16));
     c.removeFromTop (4);

@@ -22,6 +22,15 @@ Velocity ([engine] velocity / velocity_amount): scale = 1 - amount * (1 - veloci
                volume per SID, so a soft note also turns down notes still sounding there.
   * "off"    : velocity is ignored.
 
+Voice modes ([engine] mode, or set_voice_mode at run time):
+  poly    every note takes a free voice (3 per SID), the oldest is stolen
+  mono    one voice; legato glides between overlapping notes
+  unison  every voice of the part plays the note, detuned by +/- unison_detune cents
+  octave / fifth / chord   each note is stacked: +12 / +7 / +7 and +12 semitones
+  arp     the held notes play in turn on one voice ([arp] rate, pattern, octaves, gate, bpm).
+          Steps come from MIDI clock when it arrives (24 per quarter note), otherwise from
+          the BPM; service() must then be called every few ms.
+
 Controllers: a profile (profiles.py, profiles/*.toml) maps the controller's CCs, notes and pitch
 bend to sound parameters and actions. Messages arrive on one of two ports: "notes" (keys,
 wheels, pedal) and "controls" (an optional second input for knobs / buttons, e.g. a Mackie port).
@@ -61,6 +70,10 @@ RELEASE_S = [0.006, 0.024, 0.048, 0.072, 0.114, 0.168, 0.204, 0.24,
 PARAM_MAX = {"pulse_width": 4095, "cutoff": 2047, "resonance": 15, "attack": 15,
              "decay": 15, "sustain": 15, "release": 15, "volume": 15}
 VELOCITY_MODES = ("off", "sustain", "volume")
+VOICE_MODES = ("poly", "mono", "unison", "octave", "fifth", "chord", "arp")
+STACKS = {"octave": (0, 12), "fifth": (0, 7), "chord": (0, 7, 12)}
+ARP_RATES = {"1/4": 1, "1/8": 2, "1/8T": 3, "1/16": 4, "1/16T": 6, "1/32": 8}   # steps per beat
+ARP_PATTERNS = ("up", "down", "up-down", "random", "as played")
 PATCH_KEYS = {"name", "waveform", "pulse_width", "attack", "decay", "sustain", "release",
               "filter_mode", "filter_voices", "cutoff", "resonance", "volume"}
 
@@ -71,7 +84,8 @@ DEFAULTS: dict = {
     "engine": {"mode": "poly", "layout": "poly", "legato": True, "flush_ms": 5,
                "strict_order": True, "hard_restart": False, "presets": "presets.toml",
                "mute_after_release": True, "velocity": "sustain", "velocity_amount": 1.0,
-               "knobs_target": "all", "filter_cycle": ["lp", "bp", "hp", "off"]},
+               "knobs_target": "all", "filter_cycle": ["lp", "bp", "hp", "off"], "unison_detune": 8},
+    "arp": {"rate": "1/16", "pattern": "up", "octaves": 1, "gate": 0.5, "bpm": 120},
     "patch": {"name": "init", "waveform": "pulse", "pulse_width": 2048, "attack": 0, "decay": 9,
               "sustain": 10, "release": 4, "filter_mode": "lp", "filter_voices": True,
               "cutoff": 2047, "resonance": 0, "volume": 15},
@@ -127,6 +141,7 @@ class Slot:
     off_time: int = 0
     off_at: float = 0.0       # clock time of the note-off (for mute_after_release)
     vel: float = 1.0          # velocity scale of the note (velocity "sustain")
+    offset: float = 0.0       # semitones above the note: a stack interval or unison detune
 
 
 @dataclass
@@ -144,6 +159,13 @@ class Part:
     norm: dict[str, float] = field(default_factory=dict)   # fractional encoder positions
     preset_index: int = -1           # last preset selected (preset_next / preset_prev)
     vel: float = 1.0                 # velocity scale of the last note (velocity "volume")
+    arp_notes: list[tuple[int, int]] = field(default_factory=list)   # held (note, velocity), in order
+    arp_running: bool = False
+    arp_index: int = -1
+    arp_next: float = 0.0            # time of the next step
+    arp_gate_off: float | None = None
+    arp_pulse: int = 0               # MIDI clock pulses since the last step
+    arp_rng: int = 1
 
 
 class Engine:
@@ -154,7 +176,7 @@ class Engine:
         self.cfg = cfg
         eng = cfg["engine"]
         self.profile = profile if profile is not None else generic_profile()
-        self.mono = eng.get("mode", "poly") == "mono"
+        self.voice_mode = "poly"
         self.legato = bool(eng.get("legato", True))
         self.hard_restart = bool(eng.get("hard_restart", False))
         self.bend_range = self.profile.bend_range
@@ -168,6 +190,13 @@ class Engine:
         self.velocity_mode = "off"
         self.velocity_amount = 0.0
         self._set_velocity_fields(eng.get("velocity", "sustain"), eng.get("velocity_amount", 1.0))
+        arp = cfg.get("arp", {})
+        self.arp_rate, self.arp_pattern, self.arp_octaves, self.arp_gate = "1/16", "up", 1, 0.5
+        self.bpm = 120.0
+        self.unison_detune = float(eng.get("unison_detune", 8))
+        self.clock_seen_at = float("-inf")   # last MIDI clock pulse
+        self.set_arp(arp.get("rate", "1/16"), arp.get("pattern", "up"), arp.get("octaves", 1),
+                     arp.get("gate", 0.5), arp.get("bpm", 120))
         self.filter_cycle = list(eng.get("filter_cycle", ["lp", "bp", "hp", "off"]))
         bad = [m for m in self.filter_cycle if m not in FILTER_MODES]
         if bad or not self.filter_cycle:
@@ -185,13 +214,15 @@ class Engine:
         self.layout = "split" if len(groups) > 1 else "poly"
         self.parts: list[Part] = []
         for i, (ch, sids) in enumerate(groups):
-            if self.mono:
-                slots = [Slot(sids[0], 0)]
-            else:
-                slots = [Slot(s, v) for s in sids for v in range(sid.NUM_VOICES)]
+            slots = [Slot(s, v) for s in sids for v in range(sid.NUM_VOICES)]   # every voice, in every mode
             self.parts.append(Part(i, ch, sids, slots, dict(base_patch)))
 
         self._slot_at = {(s.sid, s.voice): s for p in self.parts for s in p.slots}
+        mode = eng.get("mode", "poly")
+        if mode not in VOICE_MODES:
+            raise ValueError(f"[engine] mode must be one of {', '.join(VOICE_MODES)}, not {mode!r}")
+        self.voice_mode = mode
+        self._set_offsets()
 
         target = eng.get("knobs_target", "all")
         if target == "all":
@@ -207,6 +238,10 @@ class Engine:
     @property
     def slots(self) -> list[Slot]:
         return [s for p in self.parts for s in p.slots]
+
+    @property
+    def mono(self) -> bool:
+        return self.voice_mode == "mono"
 
     def _tick(self) -> int:
         with self._tick_lock:
@@ -250,6 +285,132 @@ class Engine:
         if self.velocity_mode != "volume":
             return part.patch["volume"]
         return round(part.patch["volume"] * part.vel)
+
+    # ---------------------------------------------------------------- voice modes / arp
+    def set_voice_mode(self, mode: str) -> None:
+        """Change the voice mode while running. Sounding notes are released first."""
+        if mode not in VOICE_MODES:
+            raise ValueError(f"voice mode must be one of {', '.join(VOICE_MODES)}, not {mode!r}")
+        with self.lock:
+            if mode == self.voice_mode:
+                return
+            for part in self.parts:
+                for s in part.slots:
+                    if s.gated:
+                        self._release_voice(s)
+                part.mono_stack.clear()
+                part.arp_notes.clear()
+                part.arp_running = False
+                part.arp_gate_off = None
+            self.voice_mode = mode
+            self._set_offsets()
+            log.info("voice mode -> %s", mode)
+
+    def set_arp(self, rate: str, pattern: str, octaves: int, gate: float, bpm: float | None = None) -> None:
+        if rate not in ARP_RATES:
+            raise ValueError(f"arp rate must be one of {', '.join(ARP_RATES)}, not {rate!r}")
+        if pattern not in ARP_PATTERNS:
+            raise ValueError(f"arp pattern must be one of {', '.join(ARP_PATTERNS)}, not {pattern!r}")
+        with self.lock:
+            self.arp_rate, self.arp_pattern = rate, pattern
+            self.arp_octaves = max(1, min(3, int(octaves)))
+            self.arp_gate = min(1.0, max(0.05, float(gate)))
+            if bpm is not None:
+                self.set_bpm(bpm)
+
+    def set_bpm(self, bpm: float) -> None:
+        self.bpm = min(300.0, max(20.0, float(bpm)))
+
+    def _set_offsets(self) -> None:
+        """Unison spreads the part's voices +/- around the note; other modes start at 0."""
+        for part in self.parts:
+            for i, s in enumerate(part.slots):
+                if self.voice_mode == "unison":
+                    k = (i + 1) // 2
+                    s.offset = (k if i % 2 else -k) * self.unison_detune / 100.0
+                else:
+                    s.offset = 0.0
+
+    def _arp_step_len(self) -> float:
+        return 60.0 / self.bpm / ARP_RATES[self.arp_rate]
+
+    def _clock_active(self, now: float) -> bool:
+        return now - self.clock_seen_at < 0.5
+
+    def _arp_sequence(self, part: Part) -> list[tuple[int, int]]:
+        base = list(part.arp_notes) if self.arp_pattern == "as played" else sorted(part.arp_notes)
+        seq = [(n + 12 * o, v) for o in range(self.arp_octaves) for n, v in base]
+        if self.arp_pattern == "down":
+            seq.reverse()
+        elif self.arp_pattern == "up-down":
+            seq = seq + seq[-2:0:-1]   # bounce without repeating the ends
+        return seq
+
+    def _arp_step(self, part: Part, t: float) -> None:
+        seq = self._arp_sequence(part)
+        if not seq:
+            return
+        if self.arp_pattern == "random":
+            part.arp_rng = (part.arp_rng * 1103515245 + 12345) & 0x7FFFFFFF
+            part.arp_index = part.arp_rng % len(seq)
+        else:
+            part.arp_index = (part.arp_index + 1) % len(seq)
+        note, vel = seq[part.arp_index]
+        slot = part.slots[0]
+        slot.offset = 0.0
+        self._start_voice(part, slot, note, vel)
+        clocked = self._clock_active(t)
+        part.arp_gate_off = t + self._arp_step_len() * self.arp_gate if self.arp_gate < 1.0 and not clocked else None
+
+    def _arp_note_on(self, part: Part, note: int, velocity: int) -> None:
+        for i, (n, _) in enumerate(part.arp_notes):
+            if n == note:
+                part.arp_notes[i] = (note, velocity)
+                break
+        else:
+            part.arp_notes.append((note, velocity))
+        if not part.arp_running:   # the first note: play at once
+            part.arp_running, part.arp_index, part.arp_pulse, part.arp_rng = True, -1, 0, 1
+            t = self.now()
+            self._arp_step(part, t)
+            part.arp_next = t + self._arp_step_len()
+
+    def _arp_note_off(self, part: Part, note: int) -> None:
+        part.arp_notes = [(n, v) for n, v in part.arp_notes if n != note]
+        if not part.arp_notes and part.arp_running:
+            part.arp_running = False
+            part.arp_gate_off = None
+            if part.slots[0].gated:
+                self._release_voice(part.slots[0])
+
+    def _clock_pulse(self) -> None:
+        """A MIDI clock pulse (24 per quarter note): steps the arpeggiator in time."""
+        now = self.now()
+        self.clock_seen_at = now
+        if self.voice_mode != "arp":
+            return
+        pps = 24 // ARP_RATES[self.arp_rate]
+        gate_pulses = max(1, round(pps * self.arp_gate))
+        for part in self.parts:
+            if not part.arp_running:
+                continue
+            part.arp_next = now + self._arp_step_len()   # time-based stepping waits while clocked
+            part.arp_pulse += 1
+            if self.arp_gate < 1.0 and part.arp_pulse == gate_pulses and part.slots[0].gated:
+                self._release_voice(part.slots[0])
+            if part.arp_pulse >= pps:
+                part.arp_pulse = 0
+                self._arp_step(part, now)
+
+    def _clock_start(self) -> None:
+        for part in self.parts:
+            part.arp_pulse = 0
+            part.arp_index = -1
+
+    def cycle_voice_mode(self) -> str:
+        nxt = VOICE_MODES[(VOICE_MODES.index(self.voice_mode) + 1) % len(VOICE_MODES)]
+        self.set_voice_mode(nxt)
+        return nxt
 
     # ---------------------------------------------------------------- setup / patches
     def init_chip(self) -> None:
@@ -327,6 +488,14 @@ class Engine:
 
     def _handle(self, msg, port: str) -> None:
         t = msg.type
+        if t == "clock":
+            self._clock_pulse()
+            return
+        if t == "start":
+            self._clock_start()
+            return
+        if t in ("stop", "continue", "songpos", "active_sensing"):
+            return
         ch = getattr(msg, "channel", None)
         if t in ("note_on", "note_off"):
             hits = self._match(port, "note", ch, msg.note)
@@ -395,6 +564,8 @@ class Engine:
                 self.apply_patch(part, {"waveform": nxt})
         elif action == "panic":
             self._panic()
+        elif action == "voice_mode_next":
+            self.cycle_voice_mode()
         elif action == "sustain_pedal":            # from a note: not supported (profiles reject it)
             pass
 
@@ -436,7 +607,7 @@ class Engine:
             self.fl.gate(slot.sid, v, False)
             self.fl.barrier()
         with self.fl.edit():
-            st.set_note(v, note, part.bend)
+            st.set_note(v, note, part.bend + slot.offset)
             st.set_adsr(v, s=self._sustain_for(part, slot.sid, v))   # before the gate (flush order)
         self.fl.gate(slot.sid, v, True)
         slot.note, slot.gated, slot.on_time = note, True, self._tick()
@@ -446,11 +617,14 @@ class Engine:
         slot.gated, slot.off_time, slot.off_at = False, self._tick(), self.now()
 
     def service(self) -> None:
-        """Mute voices whose release has run out (see module docstring)."""
-        if not self.mute_after_release:
-            return
+        """Arpeggiator steps (without MIDI clock), and muting voices whose release has run out
+        (see the module docstring). Call every few ms while the arpeggiator runs, else ~20-50 ms."""
         with self.lock:
             now = self.now()
+            if self.voice_mode == "arp":
+                self._arp_service(now)
+            if not self.mute_after_release:
+                return
             for part in self.parts:
                 done_after = RELEASE_S[part.patch["release"]] * 1.2 + 0.05
                 for s in part.slots:
@@ -458,6 +632,31 @@ class Engine:
                         with self.fl.edit():
                             self.states[s.sid].set_freq(s.voice, 0)
                         s.note = None
+
+    def _arp_service(self, now: float) -> None:
+        clocked = self._clock_active(now)
+        for part in self.parts:
+            if not part.arp_running:
+                continue
+            if not clocked:
+                step = self._arp_step_len()
+                if now - part.arp_next > 1.0:      # stalled (e.g. the computer slept): no burst
+                    part.arp_next = now
+                while now >= part.arp_next:
+                    t = part.arp_next
+                    if part.arp_gate_off is not None and part.arp_gate_off <= t:
+                        if part.slots[0].gated:
+                            self._release_voice(part.slots[0])
+                        part.arp_gate_off = None
+                    self._arp_step(part, t)
+                    part.arp_next = t + step
+            if part.arp_gate_off is not None and now >= part.arp_gate_off:
+                if part.slots[0].gated:
+                    self._release_voice(part.slots[0])
+                part.arp_gate_off = None
+
+    def _mono_voices(self, part: Part) -> list[Slot]:
+        return part.slots if self.voice_mode == "unison" else part.slots[:1]
 
     def note_on(self, note: int, velocity: int = 100, part: Part | None = None) -> None:
         part = self._p(part)
@@ -469,40 +668,67 @@ class Engine:
                         self.states[i].set_volume(self._volume_for(part))
         self._unmute(part)
         part.held_by_pedal.discard(note)
-        if self.mono:
-            slot = part.slots[0]
+        mode = self.voice_mode
+        if mode == "arp":
+            self._arp_note_on(part, note, velocity)
+            return
+        if mode in ("mono", "unison"):
+            voices = self._mono_voices(part)
             if note in part.mono_stack:
                 part.mono_stack.remove(note)
             part.mono_stack.append(note)
-            if slot.gated and self.legato:
+            if voices[0].gated and self.legato:
                 with self.fl.edit():
-                    self.states[slot.sid].set_note(slot.voice, note, part.bend)
-                slot.note = note
+                    for slot in voices:
+                        self.states[slot.sid].set_note(slot.voice, note, part.bend + slot.offset)
+                        slot.note = note
             else:
+                for slot in voices:
+                    self._start_voice(part, slot, note, velocity)
+            return
+        if mode in STACKS:
+            for interval in STACKS[mode]:
+                slot = self._alloc_stack(part, note, interval)
+                slot.offset = float(interval)
                 self._start_voice(part, slot, note, velocity)
             return
         self._start_voice(part, self._alloc(part, note), note, velocity)
+
+    def _alloc_stack(self, part: Part, note: int, interval: int) -> Slot:
+        for s in part.slots:                        # this note's voice for this interval → reuse
+            if s.note == note and s.offset == float(interval):
+                return s
+        free = [s for s in part.slots if not s.gated]
+        if free:
+            return min(free, key=lambda s: s.off_time)
+        return min(part.slots, key=lambda s: s.on_time)
 
     def note_off(self, note: int, part: Part | None = None) -> None:
         part = self._p(part)
         if part.pedal:
             part.held_by_pedal.add(note)
             return
-        if self.mono:
-            slot = part.slots[0]
+        if self.voice_mode == "arp":
+            self._arp_note_off(part, note)
+            return
+        if self.voice_mode in ("mono", "unison"):
+            voices = self._mono_voices(part)
             if note in part.mono_stack:
                 part.mono_stack.remove(note)
-            if slot.note != note:
+            if voices[0].note != note:
                 return
             if part.mono_stack and self.legato:
                 prev = part.mono_stack[-1]
                 with self.fl.edit():
-                    self.states[slot.sid].set_note(slot.voice, prev, part.bend)
-                slot.note = prev
+                    for slot in voices:
+                        self.states[slot.sid].set_note(slot.voice, prev, part.bend + slot.offset)
+                        slot.note = prev
             elif part.mono_stack:
-                self._start_voice(part, slot, part.mono_stack[-1])
+                for slot in voices:
+                    self._start_voice(part, slot, part.mono_stack[-1])
             else:
-                self._release_voice(slot)
+                for slot in voices:
+                    self._release_voice(slot)
             return
         for s in part.slots:
             if s.note == note and s.gated:
@@ -515,7 +741,7 @@ class Engine:
         with self.fl.edit():
             for s in part.slots:
                 if s.note is not None:
-                    self.states[s.sid].set_note(s.voice, s.note, part.bend)
+                    self.states[s.sid].set_note(s.voice, s.note, part.bend + s.offset)
 
     def control_change(self, cc: int, value: int, part: Part | None = None, channel0: int | None = None) -> None:
         """A CC from the notes port (channel0 = its MIDI channel 0-15, None = any)."""
@@ -607,6 +833,9 @@ class Engine:
             for s in part.slots:
                 s.gated, s.off_time, s.off_at = False, self._tick(), self.now()
             part.mono_stack.clear()
+            part.arp_notes.clear()
+            part.arp_running = False
+            part.arp_gate_off = None
             part.held_by_pedal.clear()
             part.pedal = False
             part.muted = True

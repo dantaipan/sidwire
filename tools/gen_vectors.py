@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 import mido  # noqa: E402
 
-from engine import DEFAULTS, VELOCITY_MODES, Engine, load_presets  # noqa: E402
+from engine import ARP_PATTERNS, ARP_RATES, DEFAULTS, VELOCITY_MODES, VOICE_MODES, Engine, load_presets  # noqa: E402
 from profiles import load_profile  # noqa: E402
 from sid import SidState  # noqa: E402
 from transport import DryRunTransport, Flusher  # noqa: E402
@@ -29,16 +29,19 @@ PRESETS = load_presets(ROOT / "presets.toml")
 class Scenario:
     def __init__(self, name: str, nsids=2, layout="poly", mode="poly", hard_restart=0,
                  legato=1, strict=1, presets=1, target=0, channel=0, vel="sustain", vamt=100,
-                 profile="oxygen-49-mkv"):
+                 profile="oxygen-49-mkv", arate="1/16", apat="up", aoct=1, agate=50, bpm=120, detune=8):
         self.name = name
         self.conf = dict(nsids=nsids, layout=layout, mode=mode, hard_restart=hard_restart,
                          legato=legato, strict=strict, presets=presets, target=target, channel=channel,
-                         vel=vel, vamt=vamt, profile=profile)
+                         vel=vel, vamt=vamt, profile=profile, arate=arate, apat=apat.replace(" ", "_"),
+                         aoct=aoct, agate=agate, bpm=bpm, detune=detune)
         cfg = copy.deepcopy(DEFAULTS)
         cfg["engine"].update(layout=layout, mode=mode, hard_restart=bool(hard_restart),
                              legato=bool(legato), strict_order=bool(strict),
                              velocity=vel, velocity_amount=vamt / 100)
         cfg["engine"]["knobs_target"] = "all" if target == 0 else target
+        cfg["engine"]["unison_detune"] = detune
+        cfg["arp"].update(rate=arate, pattern=apat, octaves=aoct, gate=agate / 100, bpm=bpm)
         prof = load_profile(profile, [ROOT / "tests" / "profiles"]).with_channel(channel)
         self.t = DryRunTransport(echo=False)
         self.fl = Flusher(self.t, [SidState(0xD400 + 0x20 * i) for i in range(nsids)],
@@ -83,6 +86,14 @@ class Scenario:
             self.fake_time = a[0] / 1000.0
         elif k == "service":
             e.service()
+        elif k == "mclock":                # MIDI clock pulse
+            e.handle(mido.Message("clock"))
+        elif k == "mstart":
+            e.handle(mido.Message("start"))
+        elif k == "vmode":                 # voice mode index
+            e.set_voice_mode(VOICE_MODES[a[0]])
+        elif k == "arpset":                # rate index, pattern index, octaves, gate %, bpm
+            e.set_arp(list(ARP_RATES)[a[0]], ARP_PATTERNS[a[1]], a[2], a[3] / 100, a[4])
         elif k == "velmode":               # velocity mode index, amount in %
             e.set_velocity(VELOCITY_MODES[a[0]], a[1] / 100)
         else:
@@ -204,6 +215,40 @@ def handwritten() -> list[str]:
         "flush", "on 0 60 100", "on 1 60 100", "cc 1 64 127", "off 1 60", "off 0 60", "flush").finish())
     S.append(Scenario("profile_keys_channel", profile=T, channel=2).run(
         "init", "flush", "on 0 60 100", "on 1 61 100", "cc 0 74 0", "cc 1 74 0", "flush").finish())
+    # voice modes
+    for m in ("octave", "fifth", "chord"):
+        S.append(Scenario(f"mode_{m}").run(
+            "init", "flush", "clock 1000", "on 0 48 100", "on 0 55 90", "flush", "bend 0 4000", "flush",
+            "on 0 60 80", "flush", "off 0 48", "flush", "clock 1500", "service", "off 0 55", "off 0 60",
+            "flush", "clock 9000", "service", "flush").finish())
+    S.append(Scenario("mode_unison", detune=12).run(
+        "init", "flush", "on 0 57 100", "flush", "on 0 60 100", "flush", "bend 0 -3000", "flush",
+        "off 0 60", "flush", "off 0 57", "flush").finish())
+    S.append(Scenario("mode_unison_no_legato_one_sid", nsids=1, legato=0).run(
+        "init", "vmode 2", "flush", "on 0 57 100", "on 0 60 100", "flush", "off 0 60", "flush").finish())
+    for pat in ARP_PATTERNS:
+        S.append(Scenario(f"arp_{pat.replace(' ', '_')}", mode="arp", apat=pat, aoct=2, bpm=150).run(
+            "init", "flush", "clock 1000", "on 0 60 100", "on 0 64 90", "on 0 67 80", "flush",
+            *[ev for k in range(1, 14) for ev in (f"clock {1000 + k * 50}", "service", "flush")],
+            "off 0 64", *[ev for k in range(14, 20) for ev in (f"clock {1000 + k * 50}", "service", "flush")],
+            "off 0 60", "off 0 67", "flush", "clock 3000", "service", "flush").finish())
+    S.append(Scenario("arp_rates_gate_and_stall", mode="arp", arate="1/8T", agate=100, bpm=90).run(
+        "init", "flush", "clock 1000", "on 0 50 100", "on 0 53 100", "flush",
+        *[ev for k in range(1, 8) for ev in (f"clock {1000 + k * 37}", "service", "flush")],
+        "arpset 5 0 3 25 200", *[ev for k in range(8, 20) for ev in (f"clock {1000 + k * 37}", "service", "flush")],
+        "clock 5000", "service", "flush", "clock 5040", "service", "flush").finish())
+    S.append(Scenario("arp_midi_clock", mode="arp", arate="1/16", agate=50).run(
+        "init", "flush", "clock 1000", "mstart", "on 0 60 100", "on 0 63 100", "on 0 67 100", "flush",
+        *[ev for k in range(1, 26) for ev in (f"clock {1000 + k * 20}", "mclock", "service", "flush")],
+        "clock 2500", "service", "flush", "clock 2700", "service", "flush").finish())
+    S.append(Scenario("arp_pedal_and_split", mode="arp", layout="split", bpm=200).run(
+        "init", "flush", "clock 1000", "cc 0 64 127", "on 0 60 100", "off 0 60", "on 1 72 100", "flush",
+        *[ev for k in range(1, 8) for ev in (f"clock {1000 + k * 40}", "service", "flush")],
+        "cc 0 64 0", "flush", "clock 1500", "service", "flush", "off 1 72", "flush").finish())
+    S.append(Scenario("mode_switches_while_playing").run(
+        "init", "flush", "clock 1000", "on 0 60 100", "on 0 64 100", "flush", "vmode 5", "flush",
+        "on 0 48 100", "flush", "vmode 6", "on 0 50 100", "flush", "clock 1200", "service", "flush",
+        "vmode 2", "on 0 52 100", "flush", "panic", "on 0 55 100", "flush", "vmode 1", "flush").finish())
     S.append(Scenario("one_sid", nsids=1).run(
         "init", "flush", *[f"on 0 {n} 100" for n in (60, 64, 67, 72)], "flush").finish())
     return S
@@ -217,6 +262,11 @@ def randomized(seed: int, profile: str = "oxygen-49-mkv") -> str:
                 legato=rnd.choice([0, 1]), strict=rnd.choice([0, 1, 1]), presets=rnd.choice([0, 1, 1]),
                 target=rnd.choice([0, 0, 1, 2]), vel=rnd.choice(["sustain", "sustain", "volume", "off"]),
                 vamt=rnd.choice([100, 100, 50, 0]), profile=profile)
+    if seed >= 52:   # voice-mode scenarios
+        conf.update(mode=rnd.choice(list(VOICE_MODES)), arate=rnd.choice(list(ARP_RATES)),
+                    apat=rnd.choice(ARP_PATTERNS), aoct=rnd.choice([1, 2, 3]), agate=rnd.choice([25, 50, 100]),
+                    bpm=rnd.choice([60, 120, 175]), detune=rnd.choice([0, 8, 20]))
+    modes = seed >= 52
     sc = Scenario(f"random_{seed}", **conf)
     sc.ev("init"); sc.ev("flush")
     held: list[tuple[int, int]] = []
@@ -255,11 +305,19 @@ def randomized(seed: int, profile: str = "oxygen-49-mkv") -> str:
         elif r < 0.855:
             sc.ev("panic")
         elif r < 0.86:
-            sc.ev(f"velmode {rnd.randrange(3)} {rnd.choice([0, 30, 50, 100])}")
+            if modes and rnd.random() < 0.3:
+                sc.ev(f"vmode {rnd.randrange(len(VOICE_MODES))}")
+            elif modes and rnd.random() < 0.3:
+                sc.ev(f"arpset {rnd.randrange(len(ARP_RATES))} {rnd.randrange(len(ARP_PATTERNS))} "
+                      f"{rnd.choice([1, 2, 3])} {rnd.choice([10, 50, 100])} {rnd.choice([80, 140])}")
+            else:
+                sc.ev(f"velmode {rnd.randrange(3)} {rnd.choice([0, 30, 50, 100])}")
         elif r < 0.87:
             sc.ev(f"on 9 {rnd.choice([40, 40, 36])} {rnd.choice([0, 100])}")
-        elif r < 0.88:
-            t_ms += rnd.choice([5, 50, 200, 1000, 5000])
+        elif r < 0.88 or (modes and r < 0.95):
+            if modes and rnd.random() < 0.25:
+                sc.ev("mclock" if rnd.random() < 0.9 else "mstart")
+            t_ms += rnd.choice([5, 50, 200, 1000, 5000] if not modes else [3, 17, 40, 90, 250, 1500])
             sc.ev(f"clock {t_ms}")
             sc.ev("service")
         else:
@@ -268,7 +326,8 @@ def randomized(seed: int, profile: str = "oxygen-49-mkv") -> str:
 
 
 def all_randomized() -> list[str]:
-    return [randomized(seed) for seed in range(40)] + [randomized(seed, "test-all") for seed in range(40, 52)]
+    return ([randomized(seed) for seed in range(40)] + [randomized(seed, "test-all") for seed in range(40, 52)]
+            + [randomized(seed) for seed in range(52, 76)])
 
 
 def main() -> None:

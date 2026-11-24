@@ -6,6 +6,7 @@
 #include "PluginProcessor.h"
 
 #include <catch2/catch_session.hpp>
+#include <set>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
@@ -484,6 +485,11 @@ TEST_CASE ("editor snapshot", "[.snapshot]")
     auto base = juce::SystemStats::getEnvironmentVariable ("MSID_SNAPSHOT", "/tmp/sidbridge.png");
     editor->showTab (SidBridgeEditor::Tab::play);
     shoot (base);
+    r.setPlain ("voice_mode", 6.0f);   // arp
+    shoot (base.replace (".png", "-arp.png"));
+    r.setPlain ("voice_mode", 5.0f);   // chord
+    shoot (base.replace (".png", "-chord.png"));
+    r.setPlain ("voice_mode", 0.0f);
     editor->showTab (SidBridgeEditor::Tab::setup);
     shoot (base.replace (".png", "-setup.png"));
     editor->showAbout();
@@ -918,4 +924,80 @@ TEST_CASE ("updates: a newer release shows over the window; Skip hides it from a
     editor->checkForUpdates();
     CHECK (waitFor ([&] { return editor->isUpdateShowing() && editor->updateHeadline() == "Couldn't check for updates"; }));
     updates::UpdateChecker::fetchOverride = nullptr;
+}
+
+// ---------------------------------------------------------------- voice modes / arpeggiator
+
+namespace {
+int freqAt (FakeC64U& f, int voiceBase) { return f.at (voiceBase) | f.at (voiceBase + 1) << 8; }
+int gatesOn (FakeC64U& f)
+{
+    int n = 0;
+    for (int base : { 0xD400, 0xD420 })
+        for (int v = 0; v < 3; ++v)
+            n += f.at (base + 7 * v + 4) & 1;
+    return n;
+}
+} // namespace
+
+TEST_CASE ("voice modes: chord stacks three voices per note", "[plugin]")
+{
+    Rig r;
+    r.setPlain ("voice_mode", 5.0f);   // chord
+    pump (100);
+    r.midi (juce::MidiMessage::noteOn (1, 48, (juce::uint8) 100));
+    CHECK (waitFor ([&] { return gatesOn (r.fake) == 3; }));
+    std::set<int> f;
+    for (int v = 0; v < 3; ++v)
+        f.insert (freqAt (r.fake, 0xD400 + 7 * v));
+    CHECK (f == std::set<int> { msid::noteToSid (48), msid::noteToSid (55), msid::noteToSid (60) });
+    r.midi (juce::MidiMessage::noteOff (1, 48));
+    CHECK (waitFor ([&] { return gatesOn (r.fake) == 0; }));
+}
+
+TEST_CASE ("arpeggiator: steps in time at the tempo, and follows MIDI clock", "[plugin]")
+{
+    Rig r;
+    r.setPlain ("voice_mode", 6.0f);   // arp
+    r.setPlain ("arp_bpm", 240.0f);    // 1/16 at 240 BPM = 62.5 ms a step
+    r.setPlain ("arp_gate", 100.0f);
+    pump (100);
+    r.midi (juce::MidiMessage::noteOn (1, 60, (juce::uint8) 100));
+    r.midi (juce::MidiMessage::noteOn (1, 67, (juce::uint8) 100));
+    std::set<int> heard;
+    for (int i = 0; i < 40; ++i)   // ~400 ms: several steps
+    {
+        pump (10);
+        heard.insert (freqAt (r.fake, 0xD400));
+    }
+    CHECK (heard.count (msid::noteToSid (60)) == 1);
+    CHECK (heard.count (msid::noteToSid (67)) == 1);
+    CHECK (r.proc.bridge().tempoInUse() == 240.0);
+
+    // host tempo wins over the parameter
+    r.proc.bridge().setHostBpm (90.0);
+    CHECK (waitFor ([&] { return r.proc.bridge().tempoInUse() == 90.0; }));
+    r.proc.bridge().setHostBpm (0.0);
+
+    // MIDI clock from the host: 6 pulses per 1/16 step
+    r.midi (juce::MidiMessage::midiStart());
+    int before = freqAt (r.fake, 0xD400);
+    for (int i = 0; i < 6; ++i)
+        r.midi (juce::MidiMessage::midiClock());
+    pump (50);
+    CHECK (freqAt (r.fake, 0xD400) != before);
+    r.midi (juce::MidiMessage::noteOff (1, 60));
+    r.midi (juce::MidiMessage::noteOff (1, 67));
+    CHECK (waitFor ([&] { return gatesOn (r.fake) == 0; }));
+}
+
+TEST_CASE ("voice modes: a pad's next-voice-mode shows in the parameter", "[plugin]")
+{
+    UserProfiles up;
+    up.write ("vm.toml", "name = \"VM\"\n[[control]]\ncc = 85\naction = \"voice_mode_next\"\n");
+    Rig r ("poly", "vm");
+    r.midi (juce::MidiMessage::controllerEvent (1, 85, 127));
+    CHECK (waitFor ([&] { return r.plain ("voice_mode") == 1.0f; }));   // mono
+    r.midi (juce::MidiMessage::controllerEvent (1, 85, 127));
+    CHECK (waitFor ([&] { return r.plain ("voice_mode") == 2.0f; }));   // unison
 }

@@ -12,7 +12,8 @@ namespace msid {
 namespace {
 
 const std::vector<std::string> kParams { "pulse_width", "cutoff", "resonance", "attack", "decay", "sustain", "release", "volume" };
-const std::vector<std::string> kActions { "sustain_pedal", "filter_mode_next", "preset_next", "preset_prev", "waveform_next", "panic" };
+const std::vector<std::string> kActions { "sustain_pedal", "filter_mode_next", "preset_next", "preset_prev", "waveform_next", "panic",
+                                          "voice_mode_next" };
 const std::vector<std::string> kModes { "absolute", "relative-signed", "relative-twos", "relative-offset" };
 
 bool contains (const std::vector<std::string>& v, const std::string& s) { return std::find (v.begin(), v.end(), s) != v.end(); }

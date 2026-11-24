@@ -97,7 +97,7 @@ def test_mackie_target_all_moves_both():
 
 def test_split_mono_one_voice_per_part():
     e, (a, b), fl, t = make(layout="split", mode="mono")
-    assert [len(p.slots) for p in e.parts] == [1, 1]
+    assert e.voice_mode == "mono"            # every voice stays allocated; mono plays voice 1 only
     on(e, 60, ch=0); on(e, 64, ch=0); on(e, 67, ch=1)
     assert gates(a) == [True, False, False] and gates(b) == [True, False, False]
     assert a.get_freq(0) == note_to_sid(64)

@@ -15,7 +15,8 @@ from pathlib import Path
 PROFILES_DIR = Path(__file__).resolve().parent / "profiles"
 
 PARAMS = ("pulse_width", "cutoff", "resonance", "attack", "decay", "sustain", "release", "volume")
-ACTIONS = ("sustain_pedal", "filter_mode_next", "preset_next", "preset_prev", "waveform_next", "panic")
+ACTIONS = ("sustain_pedal", "filter_mode_next", "preset_next", "preset_prev", "waveform_next", "panic",
+           "voice_mode_next")
 MODES = ("absolute", "relative-signed", "relative-twos", "relative-offset")
 PORTS = ("notes", "controls")
 

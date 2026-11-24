@@ -24,6 +24,26 @@ const std::vector<std::pair<std::string, int>> kFilterModes {
     { "off", 0 }, { "lp", LP }, { "bp", BP }, { "hp", HP }, { "lp+hp", LP | HP },
     { "lp+bp", LP | BP }, { "bp+hp", BP | HP }, { "lp+bp+hp", LP | BP | HP } };
 
+const std::vector<std::string> kVoiceModes { "poly", "mono", "unison", "octave", "fifth", "chord", "arp" };
+const std::vector<std::pair<std::string, int>> kArpRates { { "1/4", 1 }, { "1/8", 2 }, { "1/8T", 3 }, { "1/16", 4 }, { "1/16T", 6 }, { "1/32", 8 } };
+const std::vector<std::string> kArpPatterns { "up", "down", "up-down", "random", "as played" };
+
+std::vector<int> stackFor (const std::string& mode)
+{
+    if (mode == "octave") return { 0, 12 };
+    if (mode == "fifth") return { 0, 7 };
+    if (mode == "chord") return { 0, 7, 12 };
+    return {};
+}
+
+int arpStepsPerBeat (const std::string& rate)
+{
+    for (auto& [k, v] : kArpRates)
+        if (k == rate)
+            return v;
+    return 4;
+}
+
 template <typename T>
 std::vector<std::string> keys (const T& table)
 {
@@ -35,6 +55,13 @@ std::vector<std::string> keys (const T& table)
 } // namespace
 
 const char* paramName (Param p) { return kParamNames[(int) p]; }
+const std::vector<std::string>& voiceModeNames() { return kVoiceModes; }
+const std::vector<std::string>& arpRateNames()
+{
+    static const auto names = keys (kArpRates);
+    return names;
+}
+const std::vector<std::string>& arpPatternNames() { return kArpPatterns; }
 int paramMax (Param p) { return kParamMax[(int) p]; }
 
 std::optional<Param> paramFromName (const std::string& n)
@@ -104,7 +131,6 @@ PatchUpdate PatchUpdate::full (const Patch& p)
 Engine::Engine (Flusher& f, EngineConfig c, std::vector<Preset> presets)
     : fl (f), cfg (std::move (c)), presetList (std::move (presets))
 {
-    mono = cfg.mode == "mono";
     now = [] { return std::chrono::duration<double> (std::chrono::steady_clock::now().time_since_epoch()).count(); };
     int n = (int) fl.states.size();
     std::vector<std::pair<int, std::vector<int>>> groups;
@@ -128,12 +154,9 @@ Engine::Engine (Flusher& f, EngineConfig c, std::vector<Preset> presets)
         p.channel = groups[i].first;
         p.sids = groups[i].second;
         auto makeSlot = [] (int sidIndex, int voice) { Slot sl; sl.sid = sidIndex; sl.voice = voice; return sl; };
-        if (mono)
-            p.slots.push_back (makeSlot (p.sids[0], 0));
-        else
-            for (int s : p.sids)
-                for (int v = 0; v < kNumVoices; ++v)
-                    p.slots.push_back (makeSlot (s, v));
+        for (int s : p.sids)   // every voice, in every mode
+            for (int v = 0; v < kNumVoices; ++v)
+                p.slots.push_back (makeSlot (s, v));
         p.patch = cfg.patch;
         parts.push_back (std::move (p));
     }
@@ -146,11 +169,264 @@ Engine::Engine (Flusher& f, EngineConfig c, std::vector<Preset> presets)
         for (auto& s : p.slots)
             slotAt[{ s.sid, s.voice }] = &s;
     setVelocityFields (cfg.velocity, cfg.velocityAmount);
+    setArp (cfg.arpRate, cfg.arpPattern, cfg.arpOctaves, cfg.arpGate, cfg.bpm);
+    if (std::find (kVoiceModes.begin(), kVoiceModes.end(), cfg.mode) == kVoiceModes.end())
+        throw std::invalid_argument ("voice mode must be poly, mono, unison, octave, fifth, chord or arp, not '" + cfg.mode + "'");
+    vmode = cfg.mode;
+    setOffsets();
     if (cfg.filterCycle.empty())
         throw std::invalid_argument ("filterCycle is empty");
     for (auto& m : cfg.filterCycle)
         if (! filterModeBits (m))
             throw std::invalid_argument ("unknown filter mode in filterCycle: '" + m + "'");
+}
+
+// ---------------------------------------------------------------- voice modes / arp
+
+void Engine::setVoiceMode (const std::string& mode)
+{
+    if (std::find (kVoiceModes.begin(), kVoiceModes.end(), mode) == kVoiceModes.end())
+        throw std::invalid_argument ("unknown voice mode '" + mode + "'");
+    std::lock_guard g (engineMutex);
+    if (mode == vmode)
+        return;
+    for (auto& part : parts)
+    {
+        for (auto& s : part.slots)
+            if (s.gated)
+                releaseVoice (s);
+        part.monoStack.clear();
+        part.arpNotes.clear();
+        part.arpRunning = false;
+        part.arpGateOff.reset();
+    }
+    vmode = mode;
+    setOffsets();
+    info ("voice mode -> " + mode);
+}
+
+std::string Engine::cycleVoiceMode()
+{
+    std::lock_guard g (engineMutex);
+    auto it = std::find (kVoiceModes.begin(), kVoiceModes.end(), vmode);
+    auto next = kVoiceModes[(size_t) ((it - kVoiceModes.begin() + 1) % (long) kVoiceModes.size())];
+    setVoiceMode (next);
+    return next;
+}
+
+void Engine::setArp (const std::string& rate, const std::string& pattern, int octaves, double gate, std::optional<double> bpm)
+{
+    auto rates = arpRateNames();
+    if (std::find (rates.begin(), rates.end(), rate) == rates.end())
+        throw std::invalid_argument ("unknown arp rate '" + rate + "'");
+    if (std::find (kArpPatterns.begin(), kArpPatterns.end(), pattern) == kArpPatterns.end())
+        throw std::invalid_argument ("unknown arp pattern '" + pattern + "'");
+    std::lock_guard g (engineMutex);
+    arpRateName = rate;
+    arpPatternName = pattern;
+    arpOct = std::clamp (octaves, 1, 3);
+    arpGateFrac = std::min (1.0, std::max (0.05, gate));
+    if (bpm)
+        setBpm (*bpm);
+}
+
+void Engine::setBpm (double b)
+{
+    tempo = std::min (300.0, std::max (20.0, b));
+}
+
+void Engine::setOffsets()
+{
+    for (auto& part : parts)
+        for (size_t i = 0; i < part.slots.size(); ++i)
+        {
+            auto& s = part.slots[i];
+            if (vmode == "unison")
+            {
+                int k = (int) (i + 1) / 2;
+                s.offset = (i % 2 ? k : -k) * cfg.unisonDetune / 100.0;
+            }
+            else
+                s.offset = 0.0;
+        }
+}
+
+double Engine::arpStepLen() const
+{
+    return 60.0 / tempo / arpStepsPerBeat (arpRateName);
+}
+
+std::vector<std::pair<int, int>> Engine::arpSequence (const Part& part) const
+{
+    auto base = part.arpNotes;
+    if (arpPatternName != "as played")
+        std::sort (base.begin(), base.end());
+    std::vector<std::pair<int, int>> seq;
+    for (int o = 0; o < arpOct; ++o)
+        for (auto& [n, v] : base)
+            seq.push_back ({ n + 12 * o, v });
+    if (arpPatternName == "down")
+        std::reverse (seq.begin(), seq.end());
+    else if (arpPatternName == "up-down" && seq.size() >= 3)
+        for (size_t i = seq.size() - 2; i >= 1; --i)   // bounce without repeating the ends
+            seq.push_back (seq[i]);
+    return seq;
+}
+
+void Engine::arpStep (Part& part, double t)
+{
+    auto seq = arpSequence (part);
+    if (seq.empty())
+        return;
+    int n = (int) seq.size();
+    if (arpPatternName == "random")
+    {
+        part.arpRng = (part.arpRng * 1103515245ULL + 12345ULL) & 0x7FFFFFFFULL;
+        part.arpIndex = (int) (part.arpRng % (uint64_t) n);
+    }
+    else
+        part.arpIndex = (part.arpIndex + 1) % n;
+    auto [note, vel] = seq[(size_t) part.arpIndex];
+    auto& slot = part.slots[0];
+    slot.offset = 0.0;
+    startVoice (part, slot, note, vel);
+    if (arpGateFrac < 1.0 && ! clockActive (t))
+        part.arpGateOff = t + arpStepLen() * arpGateFrac;
+    else
+        part.arpGateOff.reset();
+}
+
+void Engine::arpNoteOn (Part& part, int note, int velocity)
+{
+    bool found = false;
+    for (auto& nv : part.arpNotes)
+        if (nv.first == note)
+        {
+            nv.second = velocity;
+            found = true;
+            break;
+        }
+    if (! found)
+        part.arpNotes.push_back ({ note, velocity });
+    if (! part.arpRunning)   // the first note: play at once
+    {
+        part.arpRunning = true;
+        part.arpIndex = -1;
+        part.arpPulse = 0;
+        part.arpRng = 1;
+        double t = now();
+        arpStep (part, t);
+        part.arpNext = t + arpStepLen();
+    }
+}
+
+void Engine::arpNoteOff (Part& part, int note)
+{
+    part.arpNotes.erase (std::remove_if (part.arpNotes.begin(), part.arpNotes.end(),
+                                         [note] (auto& nv) { return nv.first == note; }), part.arpNotes.end());
+    if (part.arpNotes.empty() && part.arpRunning)
+    {
+        part.arpRunning = false;
+        part.arpGateOff.reset();
+        if (part.slots[0].gated)
+            releaseVoice (part.slots[0]);
+    }
+}
+
+void Engine::arpService (double t)
+{
+    bool clocked = clockActive (t);
+    for (auto& part : parts)
+    {
+        if (! part.arpRunning)
+            continue;
+        if (! clocked)
+        {
+            double step = arpStepLen();
+            if (t - part.arpNext > 1.0)   // stalled (e.g. the computer slept): no burst
+                part.arpNext = t;
+            while (t >= part.arpNext)
+            {
+                double at = part.arpNext;
+                if (part.arpGateOff && *part.arpGateOff <= at)
+                {
+                    if (part.slots[0].gated)
+                        releaseVoice (part.slots[0]);
+                    part.arpGateOff.reset();
+                }
+                arpStep (part, at);
+                part.arpNext = at + step;
+            }
+        }
+        if (part.arpGateOff && t >= *part.arpGateOff)
+        {
+            if (part.slots[0].gated)
+                releaseVoice (part.slots[0]);
+            part.arpGateOff.reset();
+        }
+    }
+}
+
+void Engine::clockPulse()
+{
+    double t = now();
+    clockSeenAt = t;
+    if (vmode != "arp")
+        return;
+    int pps = 24 / arpStepsPerBeat (arpRateName);
+    int gatePulses = std::max (1, (int) pyRound (pps * arpGateFrac));
+    for (auto& part : parts)
+    {
+        if (! part.arpRunning)
+            continue;
+        part.arpNext = t + arpStepLen();   // time-based stepping waits while clocked
+        part.arpPulse += 1;
+        if (arpGateFrac < 1.0 && part.arpPulse == gatePulses && part.slots[0].gated)
+            releaseVoice (part.slots[0]);
+        if (part.arpPulse >= pps)
+        {
+            part.arpPulse = 0;
+            arpStep (part, t);
+        }
+    }
+}
+
+void Engine::clockStart()
+{
+    for (auto& part : parts)
+    {
+        part.arpPulse = 0;
+        part.arpIndex = -1;
+    }
+}
+
+std::vector<Slot*> Engine::monoVoices (Part& part)
+{
+    std::vector<Slot*> out;
+    if (vmode == "unison")
+        for (auto& s : part.slots)
+            out.push_back (&s);
+    else
+        out.push_back (&part.slots[0]);
+    return out;
+}
+
+Slot& Engine::allocStack (Part& part, int note, int interval)
+{
+    for (auto& s : part.slots)   // this note's voice for this interval -> reuse
+        if (s.note == note && s.offset == (double) interval)
+            return s;
+    Slot* best = nullptr;
+    for (auto& s : part.slots)
+        if (! s.gated && (best == nullptr || s.offTime < best->offTime))
+            best = &s;
+    if (best)
+        return *best;
+    best = &part.slots[0];
+    for (auto& s : part.slots)
+        if (s.onTime < best->onTime)
+            best = &s;
+    return *best;
 }
 
 // ---------------------------------------------------------------- velocity
@@ -320,6 +596,16 @@ void Engine::handle (const MidiEvent& e, Port port)
     std::lock_guard g (engineMutex);
     using T = MidiEvent::Type;
     using K = Control::Kind;
+    if (e.type == T::Clock)
+    {
+        clockPulse();
+        return;
+    }
+    if (e.type == T::Start)
+    {
+        clockStart();
+        return;
+    }
     if (e.type == T::NoteOn || e.type == T::NoteOff)
     {
         auto hits = match (port, K::Note, e.channel, e.data1);
@@ -373,6 +659,7 @@ void Engine::handle (const MidiEvent& e, Port port)
             break;
         }
         case T::ProgramChange: programChange (e.data1, *part); break;
+        case T::Clock: case T::Start: break;   // handled above
     }
 }
 
@@ -430,6 +717,10 @@ void Engine::action (const std::string& name)
     else if (name == "panic")
     {
         panic();
+    }
+    else if (name == "voice_mode_next")
+    {
+        cycleVoiceMode();
     }
 }
 
@@ -489,7 +780,7 @@ void Engine::startVoice (Part& part, Slot& slot, int note, std::optional<int> ve
     }
     {
         auto e = fl.edit();
-        st.setNote (v, note, part.bend);
+        st.setNote (v, note, part.bend + slot.offset);
         st.setAdsr (v, {}, {}, sustainFor (part, slot.sid, v));   // before the gate (flush order)
     }
     fl.gate (slot.sid, v, true);
@@ -508,10 +799,12 @@ void Engine::releaseVoice (Slot& slot)
 
 void Engine::service()
 {
-    if (! cfg.muteAfterRelease)
-        return;
     std::lock_guard g (engineMutex);
     double t = now();
+    if (vmode == "arp")
+        arpService (t);
+    if (! cfg.muteAfterRelease)
+        return;
     for (auto& part : parts)
     {
         double doneAfter = kReleaseS[std::clamp (part.patch.release, 0, 15)] * 1.2 + 0.05;
@@ -542,20 +835,37 @@ void Engine::noteOn (int note, int velocity, Part& part)
     }
     unmute (part);
     part.heldByPedal.erase (note);
-    if (mono)
+    if (vmode == "arp")
     {
-        auto& slot = part.slots[0];
+        arpNoteOn (part, note, velocity);
+        return;
+    }
+    if (vmode == "mono" || vmode == "unison")
+    {
+        auto voices = monoVoices (part);
         auto& stack = part.monoStack;
         stack.erase (std::remove (stack.begin(), stack.end(), note), stack.end());
         stack.push_back (note);
-        if (slot.gated && cfg.legato)
+        if (voices[0]->gated && cfg.legato)
         {
             auto e = fl.edit();
-            fl.states[(size_t) slot.sid].setNote (slot.voice, note, part.bend);
-            slot.note = note;
+            for (auto* slot : voices)
+            {
+                fl.states[(size_t) slot->sid].setNote (slot->voice, note, part.bend + slot->offset);
+                slot->note = note;
+            }
         }
         else
+            for (auto* slot : voices)
+                startVoice (part, *slot, note, velocity);
+        return;
+    }
+    if (auto intervals = stackFor (vmode); ! intervals.empty())
+    {
+        for (int interval : intervals)
         {
+            auto& slot = allocStack (part, note, interval);
+            slot.offset = (double) interval;
             startVoice (part, slot, note, velocity);
         }
         return;
@@ -571,28 +881,37 @@ void Engine::noteOff (int note, Part& part)
         part.heldByPedal.insert (note);
         return;
     }
-    if (mono)
+    if (vmode == "arp")
     {
-        auto& slot = part.slots[0];
+        arpNoteOff (part, note);
+        return;
+    }
+    if (vmode == "mono" || vmode == "unison")
+    {
+        auto voices = monoVoices (part);
         auto& stack = part.monoStack;
         stack.erase (std::remove (stack.begin(), stack.end(), note), stack.end());
-        if (slot.note != note)
+        if (voices[0]->note != note)
             return;
         if (! stack.empty() && cfg.legato)
         {
             int prev = stack.back();
             auto e = fl.edit();
-            fl.states[(size_t) slot.sid].setNote (slot.voice, prev, part.bend);
-            slot.note = prev;
+            for (auto* slot : voices)
+            {
+                fl.states[(size_t) slot->sid].setNote (slot->voice, prev, part.bend + slot->offset);
+                slot->note = prev;
+            }
         }
         else if (! stack.empty())
         {
-            startVoice (part, slot, stack.back());
+            int prev = stack.back();
+            for (auto* slot : voices)
+                startVoice (part, *slot, prev);
         }
         else
-        {
-            releaseVoice (slot);
-        }
+            for (auto* slot : voices)
+                releaseVoice (*slot);
         return;
     }
     for (auto& s : part.slots)
@@ -609,7 +928,7 @@ void Engine::pitchBend (int pitch, Part& part)
     auto e = fl.edit();
     for (auto& s : part.slots)
         if (s.note)
-            fl.states[(size_t) s.sid].setNote (s.voice, *s.note, part.bend);
+            fl.states[(size_t) s.sid].setNote (s.voice, *s.note, part.bend + s.offset);
 }
 
 void Engine::controlChange (int cc, int value, Part& part, int channel0)
@@ -743,6 +1062,9 @@ void Engine::panic()
             s.offAt = now();
         }
         part.monoStack.clear();
+        part.arpNotes.clear();
+        part.arpRunning = false;
+        part.arpGateOff.reset();
         part.heldByPedal.clear();
         part.pedal = false;
         part.muted = true;

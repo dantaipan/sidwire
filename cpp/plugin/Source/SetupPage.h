@@ -55,9 +55,9 @@ private:
     juce::StringArray knownPorts;
 
     // 3: how you play
-    juce::Label layoutLabel { {}, "Layout" }, modeLabel { {}, "Voices" }, targetLabel { {}, "Knobs and pads change" },
+    juce::Label layoutLabel { {}, "Layout" }, targetLabel { {}, "Knobs and pads change" },
                 presetsLabel { {}, "Presets" }, presetsName;
-    ui::Segmented layout { { "Poly", "Split ch1 / ch2" } }, mode { { "Poly", "Mono" } }, target { { "Both SIDs", "SID 1", "SID 2" } };
+    ui::Segmented layout { { "Poly", "Split ch1 / ch2" } }, target { { "Both SIDs", "SID 1", "SID 2" } };
     juce::TextButton loadPresets { "Load file..." }, builtinPresets { "Built-in" };
     // standalone app only: where the streamed C64U audio plays
     juce::Label audioOutLabel { {}, "Audio output (for Stream C64U audio)" };

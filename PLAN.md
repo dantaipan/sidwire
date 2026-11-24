@@ -176,6 +176,12 @@ filter live with acceptable feel.
 - **MIDI learn** (right-click) saves into the user's copy of the profile.
 - **Silence** (was Panic) and **Stream C64U audio** (was "C64 audio"), renamed by the user.
 
+## Voice modes and arpeggiator — done 2026-11-24
+- Like LukHash's SID SYNTH (found in the search for similar apps): poly, mono, unison
+  (detuned), octave / fifth / chord stacks, and a tempo-locked arpeggiator (rates, patterns,
+  octaves, gate; MIDI clock, else host tempo or BPM). Python + C++ (parity vectors), plugin
+  parameters + Voice mode bar on Play, a "voice_mode_next" profile action.
+
 ## Future enhancements (noted 2026-11-23)
 - Stereo balance in poly mode (notes alternate L/R in threes because the sockets are panned
   L3/R3). The user is deciding between centring the mixer, a fill-SID-1-first allocator, or split.

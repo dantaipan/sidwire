@@ -74,8 +74,19 @@ void LookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int 
 }
 
 void LookAndFeel::drawLinearSlider (juce::Graphics& g, int x, int y, int w, int h, float pos, float, float,
-                                    juce::Slider::SliderStyle, juce::Slider&)
+                                    juce::Slider::SliderStyle style, juce::Slider& s)
 {
+    if (style == juce::Slider::LinearBar)   // a small value field that fills up; its text is the slider's label
+    {
+        auto r = s.getLocalBounds().toFloat().reduced (0.5f);
+        g.setColour (field);
+        g.fillRoundedRectangle (r, 7.0f);
+        g.setColour (selBg);
+        g.fillRoundedRectangle (r.withRight (juce::jmax (r.getX() + 7.0f, pos)), 7.0f);
+        g.setColour (border);
+        g.drawRoundedRectangle (r, 7.0f, 1.0f);
+        return;
+    }
     auto bar = juce::Rectangle<float> ((float) x, (float) y + (float) h / 2.0f - 3.0f, (float) w, 6.0f);
     g.setColour (border);
     g.fillRoundedRectangle (bar, 3.0f);

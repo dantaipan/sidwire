@@ -1,5 +1,5 @@
 scenario chord_and_release
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -23,7 +23,7 @@ regs 0 67110008400984ED150008400984131A000840098407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario six_voices_then_steal
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -54,7 +54,7 @@ regs 0 021F0008410984DA2000084109748913000841098407FF071F
 regs 1 B2140008410984ED1500084109843B17000841098407FF071F
 end
 scenario retrigger_same_window
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -75,7 +75,7 @@ regs 0 67110008410984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario velocity_zero_noteoff
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -92,7 +92,7 @@ regs 0 67110008400984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario adsr_and_gate_split
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -109,7 +109,7 @@ regs 0 B408000841F9840000000840F9A40000000840F9A407FF071F
 regs 1 0000000840F9A40000000840F9A40000000840F9A407FF071F
 end
 scenario no_strict_order
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=0 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=0 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000084009A4000000084009A4000000084009A407FF071F
@@ -123,7 +123,7 @@ regs 0 B408000841F9840000000840F9A40000000840F9A407FF071F
 regs 1 0000000840F9A40000000840F9A40000000840F9A407FF071F
 end
 scenario bend_retunes
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -150,7 +150,7 @@ regs 0 B511000841098450160008410984881A000841098407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario cc_map
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -177,7 +177,7 @@ regs 0 0000100840F0840000100840F0840000100840F08407FFF715
 regs 1 0000100840F0840000100840F0840000100840F08407FFF715
 end
 scenario presets_cycle
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -211,7 +211,7 @@ regs 0 671100085100C3ED1500085100C3000000085000F307FF000F
 regs 1 000000085000F3000000085000F3000000085000F307FF000F
 end
 scenario waveform_programs_no_presets
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=0 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=0 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -232,7 +232,7 @@ regs 0 67110008410984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario panic_and_unmute
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -261,7 +261,7 @@ regs 0 131A0008400984ED150008400984000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario sustain_pedal
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -285,7 +285,7 @@ regs 0 6711000841098489130008400984000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario mono_legato
-config nsids=2 layout=poly mode=mono hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=mono hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -312,7 +312,7 @@ regs 0 ED150008400984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario mono_no_legato
-config nsids=2 layout=poly mode=mono hard_restart=0 legato=0 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=mono hard_restart=0 legato=0 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -335,7 +335,7 @@ regs 0 67110008410984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario hard_restart
-config nsids=2 layout=poly mode=poly hard_restart=1 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=1 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -360,7 +360,7 @@ regs 0 67110008400984000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario split_channels
-config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -389,7 +389,7 @@ regs 0 67110008410984000000084009A4000000084009A40000071F
 regs 1 891300082008530000000820086300000008200863004BA71F
 end
 scenario split_mono
-config nsids=2 layout=split mode=mono hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=split mode=mono hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -409,7 +409,7 @@ regs 0 ED150008410984000000084009A4000000084009A407FF071F
 regs 1 131A0008410984000000084009A4000000084009A407FF071F
 end
 scenario mackie_encoders
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -465,7 +465,7 @@ regs 0 0000C0072008630000C0072008630000C007200863004DA71F
 regs 1 0000C0072008630000C0072008630000C007200863004DA71F
 end
 scenario mackie_target_2
-config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -484,7 +484,7 @@ regs 0 000000084009A4000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FD071F
 end
 scenario mackie_faders
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -509,7 +509,7 @@ regs 0 000000084009A4000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario channel_filter
-config nsids=1 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=2 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=1 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=2 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -523,7 +523,7 @@ flush
 regs 0 70120008410984000000084009A4000000084009A407FF071F
 end
 scenario mute_after_release
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -570,7 +570,7 @@ regs 0 0000000840098F3317000840098F6A12000841098F07FF071F
 regs 1 000000084009AF000000084009AF000000084009AF07FF071F
 end
 scenario velocity_sustain
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -603,7 +603,7 @@ regs 0 671190014106C6ED159001400666131A900141060607FF071F
 regs 1 CE22900141069611279001410626000090014006C607FF071F
 end
 scenario velocity_amount_half
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=50 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=50 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -621,7 +621,7 @@ regs 0 6711000841095470120008410974891300084109A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario velocity_volume
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=volume vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=volume vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -652,7 +652,7 @@ regs 0 671100084109A4891300084109A4000000084009A407FF071B
 regs 1 000000084009A4000000084009A4000000084009A407FF071B
 end
 scenario velocity_volume_split
-config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=volume vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=volume vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -669,7 +669,7 @@ regs 0 671100084109A4000000084009A4000000084009A407FF071F
 regs 1 671100084109A4000000084009A4000000084009A407FF0714
 end
 scenario velocity_off
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=off vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=off vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -685,7 +685,7 @@ regs 0 671100084109A4ED1500084109A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario velocity_mode_changes
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -718,7 +718,7 @@ regs 0 671100084109A4ED1500084109A4131A00084109A407FF071F
 regs 1 451D0008410964000000084009A4000000084009A407FF071F
 end
 scenario velocity_hard_restart_mono
-config nsids=2 layout=poly mode=mono hard_restart=1 legato=0 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=mono hard_restart=1 legato=0 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -747,7 +747,7 @@ regs 0 671100084109A4000000084009A4000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario pads_filter_cycle
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -780,7 +780,7 @@ regs 0 671100084109847B050008410984000000084009A407FF071F
 regs 1 000000084009A4000000084009A4000000084009A407FF071F
 end
 scenario pads_split_target
-config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -800,7 +800,7 @@ regs 0 000000084009A4000000084009A4000000084009A407FF071F
 regs 1 000000082008630000000820086300000008200863004BA72F
 end
 scenario profile_cc_params_and_channels
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -832,7 +832,7 @@ regs 0 131AFF0F4109840000FF0F4009A40000FF0F4009A407FF271F
 regs 1 0000FF0F4009A40000FF0F4009A40000FF0F4009A407FF271F
 end
 scenario profile_actions_cc
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -876,7 +876,7 @@ regs 0 671100087000C3891300087000C3000000087000F307FF0710
 regs 1 000000087000F3000000087000F3000000087000F307FF0710
 end
 scenario profile_preset_prev_first
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -894,7 +894,7 @@ regs 0 000000085000F3000000085000F3000000085000F307FF000F
 regs 1 000000085000F3000000085000F3000000085000F307FF000F
 end
 scenario profile_note_button
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -916,7 +916,7 @@ regs 0 B4080008410984000000084009A4000000084009A407FF072F
 regs 1 000000084009A4000000084009A4000000084009A407FF072F
 end
 scenario profile_controls_port
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -956,7 +956,7 @@ regs 0 67110008400984000000084009A4000000084009A407FF8714
 regs 1 000000084009A4000000084009A4000000084009A407FF8714
 end
 scenario profile_split_targets
-config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=split mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=2 channel=0 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -986,7 +986,7 @@ regs 0 67110008400984000000084009A4000000084009A40000071F
 regs 1 67110008410984000000084009A4000000084009A407FF0710
 end
 scenario profile_keys_channel
-config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=2 vel=sustain vamt=100 profile=test-all
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=2 vel=sustain vamt=100 profile=test-all arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
@@ -1005,8 +1005,1088 @@ flush
 regs 0 70120008410984000000084009A4000000084009A40000071F
 regs 1 000000084009A4000000084009A4000000084009A40000071F
 end
+scenario mode_octave
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 48 100
+on 0 55 90
+flush
+W D400 B40800084009840A0D0008400974
+W D404 4109840A0D000841
+bend 0 4000
+flush
+W D400 35090008410984CB
+on 0 60 80
+flush
+W D40E 6A120008400964
+W D412 41
+off 0 48
+flush
+W D404 40
+clock 1500
+service
+off 0 55
+off 0 60
+flush
+W D400 00000008400984CB0D00084009746A12000840
+clock 9000
+service
+flush
+W D407 000000084009740000
+flush
+regs 0 00000008400984000000084009740000000840096407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario mode_fifth
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 48 100
+on 0 55 90
+flush
+W D400 B40800084009840A0D0008400974
+W D404 4109840A0D000841
+bend 0 4000
+flush
+W D400 35090008410984CB
+on 0 60 80
+flush
+W D40E 6A120008400964
+W D412 41
+off 0 48
+flush
+W D404 40
+clock 1500
+service
+off 0 55
+off 0 60
+flush
+W D400 00000008400984CB0D00084009746A12000840
+clock 9000
+service
+flush
+W D407 000000084009740000
+flush
+regs 0 00000008400984000000084009740000000840096407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario mode_chord
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 48 100
+on 0 55 90
+flush
+W D400 B40800084009840A0D0008400974
+W D404 4109840A0D000841
+bend 0 4000
+flush
+W D400 35090008410984CB
+on 0 60 80
+flush
+W D40E 6A120008400964
+W D412 41
+off 0 48
+flush
+W D404 40
+clock 1500
+service
+off 0 55
+off 0 60
+flush
+W D400 00000008400984CB0D00084009746A12000840
+clock 9000
+service
+flush
+W D407 000000084009740000
+flush
+regs 0 00000008400984000000084009740000000840096407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario mode_unison
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=12
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+on 0 57 100
+flush
+W D400 A20E0008400984
+W D404 41
+on 0 60 100
+flush
+W D407 67110008400984
+W D40B 41
+bend 0 -3000
+flush
+W D400 070E0008410984AF10
+off 0 60
+flush
+W D40B 40
+off 0 57
+flush
+W D404 40
+flush
+regs 0 070E0008400984AF100008400984000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario mode_unison_no_legato_one_sid
+config nsids=1 layout=poly mode=poly hard_restart=0 legato=0 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+vmode 2
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+on 0 57 100
+on 0 60 100
+flush
+W D400 A20E0008400984B40E0008400984910E0008400984
+W D404 400984B40E0008410984910E000841
+W D400 67110008410984B40E000840
+W D407 7C110008410984910E000840
+W D40E 5311000841
+off 0 60
+flush
+W D404 40
+W D400 A20E00084109847C11000840
+W D407 B40E00084109845311000840
+W D40E 910E000841
+flush
+regs 0 A20E0008410984B40E0008410984910E000841098407FF071F
+end
+scenario arp_up
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=2 agate=50 bpm=150 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 90
+on 0 67 80
+flush
+W D400 67110008400984
+W D404 41
+clock 1050
+service
+flush
+W D404 40
+clock 1100
+service
+flush
+W D400 ED150008400974
+W D404 41
+clock 1150
+service
+flush
+clock 1200
+service
+flush
+W D404 40
+clock 1250
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1300
+service
+flush
+W D404 40
+clock 1350
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1400
+service
+flush
+W D404 40
+clock 1450
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+clock 1500
+service
+flush
+W D404 40
+clock 1550
+service
+flush
+W D400 26340008400964
+W D404 41
+clock 1600
+service
+flush
+W D404 40
+clock 1650
+service
+flush
+W D400 67110008400984
+W D404 41
+off 0 64
+clock 1700
+service
+flush
+W D404 40
+clock 1750
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1800
+service
+flush
+W D404 40
+clock 1850
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1900
+service
+flush
+W D404 40
+clock 1950
+service
+flush
+W D400 26340008400964
+W D404 41
+off 0 60
+off 0 67
+flush
+W D404 40
+clock 3000
+service
+flush
+W D400 0000
+flush
+regs 0 00000008400964000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_down
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=down aoct=2 agate=50 bpm=150 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 90
+on 0 67 80
+flush
+W D400 CE220008400984
+W D404 41
+clock 1050
+service
+flush
+W D404 40
+clock 1100
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+clock 1150
+service
+flush
+clock 1200
+service
+flush
+W D404 40
+clock 1250
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1300
+service
+flush
+W D404 40
+clock 1350
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1400
+service
+flush
+W D404 40
+clock 1450
+service
+flush
+W D400 ED150008400974
+W D404 41
+clock 1500
+service
+flush
+W D404 40
+clock 1550
+service
+flush
+W D400 67110008400984
+W D404 41
+clock 1600
+service
+flush
+W D404 40
+clock 1650
+service
+flush
+W D400 26340008400964
+W D404 41
+off 0 64
+clock 1700
+service
+flush
+W D404 40
+clock 1750
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1800
+service
+flush
+W D404 40
+clock 1850
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1900
+service
+flush
+W D404 40
+clock 1950
+service
+flush
+W D400 67110008400984
+W D404 41
+off 0 60
+off 0 67
+flush
+W D404 40
+clock 3000
+service
+flush
+W D400 0000
+flush
+regs 0 00000008400984000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_up-down
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up-down aoct=2 agate=50 bpm=150 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 90
+on 0 67 80
+flush
+W D400 67110008400984
+W D404 41
+clock 1050
+service
+flush
+W D404 40
+clock 1100
+service
+flush
+W D400 ED150008400974
+W D404 41
+clock 1150
+service
+flush
+clock 1200
+service
+flush
+W D404 40
+clock 1250
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1300
+service
+flush
+W D404 40
+clock 1350
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1400
+service
+flush
+W D404 40
+clock 1450
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+clock 1500
+service
+flush
+W D404 40
+clock 1550
+service
+flush
+W D400 26340008400964
+W D404 41
+clock 1600
+service
+flush
+W D404 40
+clock 1650
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+off 0 64
+clock 1700
+service
+flush
+W D404 40
+clock 1750
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1800
+service
+flush
+W D404 40
+clock 1850
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1900
+service
+flush
+W D404 40
+clock 1950
+service
+flush
+W D400 26340008400964
+W D404 41
+off 0 60
+off 0 67
+flush
+W D404 40
+clock 3000
+service
+flush
+W D400 0000
+flush
+regs 0 00000008400964000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_random
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=random aoct=2 agate=50 bpm=150 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 90
+on 0 67 80
+flush
+W D400 67110008400984
+W D404 41
+clock 1050
+service
+flush
+W D404 40
+clock 1100
+service
+flush
+W D400 CE22000841
+clock 1150
+service
+flush
+clock 1200
+service
+flush
+W D404 40
+clock 1250
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+clock 1300
+service
+flush
+W D404 40
+clock 1350
+service
+flush
+W D400 ED15000841
+clock 1400
+service
+flush
+W D404 40
+clock 1450
+service
+flush
+W D400 DA2B000841
+clock 1500
+service
+flush
+W D404 40
+clock 1550
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1600
+service
+flush
+W D404 40
+clock 1650
+service
+flush
+W D400 131A0008400964
+W D404 41
+off 0 64
+clock 1700
+service
+flush
+W D404 40
+clock 1750
+service
+flush
+W D404 41
+clock 1800
+service
+flush
+W D404 40
+clock 1850
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1900
+service
+flush
+W D404 40
+clock 1950
+service
+flush
+W D400 26340008400964
+W D404 41
+off 0 60
+off 0 67
+flush
+W D404 40
+clock 3000
+service
+flush
+W D400 0000
+flush
+regs 0 00000008400964000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_as_played
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=as_played aoct=2 agate=50 bpm=150 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 90
+on 0 67 80
+flush
+W D400 67110008400984
+W D404 41
+clock 1050
+service
+flush
+W D404 40
+clock 1100
+service
+flush
+W D400 ED150008400974
+W D404 41
+clock 1150
+service
+flush
+clock 1200
+service
+flush
+W D404 40
+clock 1250
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1300
+service
+flush
+W D404 40
+clock 1350
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1400
+service
+flush
+W D404 40
+clock 1450
+service
+flush
+W D400 DA2B0008400974
+W D404 41
+clock 1500
+service
+flush
+W D404 40
+clock 1550
+service
+flush
+W D400 26340008400964
+W D404 41
+clock 1600
+service
+flush
+W D404 40
+clock 1650
+service
+flush
+W D400 67110008400984
+W D404 41
+off 0 64
+clock 1700
+service
+flush
+W D404 40
+clock 1750
+service
+flush
+W D400 131A0008400964
+W D404 41
+clock 1800
+service
+flush
+W D404 40
+clock 1850
+service
+flush
+W D400 CE220008400984
+W D404 41
+clock 1900
+service
+flush
+W D404 40
+clock 1950
+service
+flush
+W D400 26340008400964
+W D404 41
+off 0 60
+off 0 67
+flush
+W D404 40
+clock 3000
+service
+flush
+W D400 0000
+flush
+regs 0 00000008400964000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_rates_gate_and_stall
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/8T apat=up aoct=1 agate=100 bpm=90 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 50 100
+on 0 53 100
+flush
+W D400 C4090008400984
+W D404 41
+clock 1037
+service
+flush
+clock 1074
+service
+flush
+clock 1111
+service
+flush
+clock 1148
+service
+flush
+clock 1185
+service
+flush
+clock 1222
+service
+flush
+clock 1259
+service
+flush
+W D404 40
+W D400 9D0B000841
+arpset 5 0 3 25 200
+clock 1296
+service
+flush
+clock 1333
+service
+flush
+clock 1370
+service
+flush
+clock 1407
+service
+flush
+clock 1444
+service
+flush
+clock 1481
+service
+flush
+W D404 40
+W D400 8913000840
+clock 1518
+service
+flush
+W D400 3B17000840
+clock 1555
+service
+flush
+W D400 1127000840
+clock 1592
+service
+flush
+W D400 762E000840
+clock 1629
+service
+flush
+W D400 C409000840
+clock 1666
+service
+flush
+W D400 9D0B000840
+clock 1703
+service
+flush
+W D400 8913000840
+clock 5000
+service
+flush
+W D400 3B17000841
+clock 5040
+service
+flush
+W D400 1127000840
+W D404 41
+flush
+regs 0 11270008410984000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_midi_clock
+config nsids=2 layout=poly mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+mstart
+on 0 60 100
+on 0 63 100
+on 0 67 100
+flush
+W D400 67110008400984
+W D404 41
+clock 1020
+mclock
+service
+flush
+clock 1040
+mclock
+service
+flush
+clock 1060
+mclock
+service
+flush
+W D404 40
+clock 1080
+mclock
+service
+flush
+clock 1100
+mclock
+service
+flush
+clock 1120
+mclock
+service
+flush
+W D400 B214000841
+clock 1140
+mclock
+service
+flush
+clock 1160
+mclock
+service
+flush
+clock 1180
+mclock
+service
+flush
+W D404 40
+clock 1200
+mclock
+service
+flush
+clock 1220
+mclock
+service
+flush
+clock 1240
+mclock
+service
+flush
+W D400 131A000841
+clock 1260
+mclock
+service
+flush
+clock 1280
+mclock
+service
+flush
+clock 1300
+mclock
+service
+flush
+W D404 40
+clock 1320
+mclock
+service
+flush
+clock 1340
+mclock
+service
+flush
+clock 1360
+mclock
+service
+flush
+W D400 6711000841
+clock 1380
+mclock
+service
+flush
+clock 1400
+mclock
+service
+flush
+clock 1420
+mclock
+service
+flush
+W D404 40
+clock 1440
+mclock
+service
+flush
+clock 1460
+mclock
+service
+flush
+clock 1480
+mclock
+service
+flush
+W D400 B214000841
+clock 1500
+mclock
+service
+flush
+clock 2500
+service
+flush
+W D404 40
+W D400 131A000840
+W D400 6711000840
+W D400 B214000840
+W D400 6711000841
+clock 2700
+service
+flush
+W D400 B214000840
+W D404 40
+flush
+regs 0 B2140008400984000000084009A4000000084009A407FF071F
+regs 1 000000084009A4000000084009A4000000084009A407FF071F
+end
+scenario arp_pedal_and_split
+config nsids=2 layout=split mode=arp hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=200 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+cc 0 64 127
+on 0 60 100
+off 0 60
+on 1 72 100
+flush
+W D400 67110008400984
+W D404 41
+W D420 CE220008400984
+W D424 41
+clock 1040
+service
+flush
+W D404 40
+W D424 40
+clock 1080
+service
+flush
+W D404 41
+W D424 41
+clock 1120
+service
+flush
+W D404 40
+W D424 40
+clock 1160
+service
+flush
+W D404 41
+W D424 41
+clock 1200
+service
+flush
+W D404 40
+W D424 40
+clock 1240
+service
+flush
+W D404 41
+W D424 41
+clock 1280
+service
+flush
+W D404 40
+W D424 40
+cc 0 64 0
+flush
+clock 1500
+service
+flush
+W D400 0000
+W D424 40
+off 1 72
+flush
+flush
+regs 0 00000008400984000000084009A4000000084009A407FF071F
+regs 1 CE220008400984000000084009A4000000084009A407FF071F
+end
+scenario mode_switches_while_playing
+config nsids=2 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
+init
+flush
+W D400 000000080009A4000000080009A4000000080009A407FF071F
+W D404 4009A4000000084009A40000000840
+W D420 000000080009A4000000080009A4000000080009A407FF071F
+W D424 4009A4000000084009A40000000840
+clock 1000
+on 0 60 100
+on 0 64 100
+flush
+W D400 67110008400984ED150008400984
+W D404 410984ED15000841
+vmode 5
+flush
+W D404 400984ED15000840
+on 0 48 100
+flush
+W D40E B4080008400984
+W D412 41
+W D420 0A0D000840098467110008400984
+W D424 4109846711000841
+vmode 6
+on 0 50 100
+flush
+W D400 C4090008410984ED150008400984B408000840
+W D424 4009846711000840
+clock 1200
+service
+flush
+W D404 40
+W D404 400984000000084009840000
+W D420 000000084009840000
+vmode 2
+on 0 52 100
+flush
+W D400 F70A0008410984040B0008410984EA0A000841
+W D420 110B0008400984DD0A00084009841E0B0008400984
+W D424 410984DD0A00084109841E0B000841
+panic
+on 0 55 100
+flush
+W D400 0A0D0008400984040B0008400984EA0A000840098407FF071F
+W D424 400984DD0A00084009841E0B000840098407FF071F
+W D404 410984190D0008410984FA0C000841
+W D420 290D0008410984EB0C0008410984380D000841
+vmode 1
+flush
+W D404 400984190D0008400984FA0C000840
+W D424 400984EB0C0008400984380D000840
+flush
+regs 0 0A0D0008400984190D0008400984FA0C000840098407FF071F
+regs 1 290D0008400984EB0C0008400984380D000840098407FF071F
+end
 scenario one_sid
-config nsids=1 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv
+config nsids=1 layout=poly mode=poly hard_restart=0 legato=1 strict=1 presets=1 target=0 channel=0 vel=sustain vamt=100 profile=oxygen-49-mkv arate=1/16 apat=up aoct=1 agate=50 bpm=120 detune=8
 init
 flush
 W D400 000000080009A4000000080009A4000000080009A407FF071F
