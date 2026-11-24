@@ -554,3 +554,14 @@ The player was uninstalled from the C64 (IRQ vector back at $EA31).
   prompt (via PLIST_TO_MERGE); HARDENED_RUNTIME_ENABLED is on.
 - v0.1.0: dist/SID-Bridge-0.1.0.dmg, 19 MB; notarization accepted for the bundles and the DMG;
   spctl reports "Notarized Developer ID". Notes are in docs/releases/v0.1.0.md.
+
+## App icon — 2026-11-24
+- The user designed it (in Claude.ai): direction A, "SID chip with a rainbow sawtooth", kept as
+  `docs/icon.svg` / `docs/icon.png` (1024 px). An earlier green-wave version is in attic/ (not
+  in git).
+- `ICON_BIG docs/icon.png` in juce_add_plugin: JUCE writes `AppIcon.icns` into the app, the AU
+  and the VST3. **JUCE generates it when CMake configures**, not when it builds: after changing
+  the icon, run `cmake --preset release` again. The release script configures fresh every time.
+  The release DMG gets it as its volume icon (`.VolumeIcon.icns` + `SetFile -a C`).
+- Small sizes: at 32 px the chip, "SID" and the coloured wave read; at 16 px it's a chip shape
+  with a coloured line.

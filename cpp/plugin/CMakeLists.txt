@@ -15,6 +15,7 @@ juce_add_plugin(SidBridge
     AU_MAIN_TYPE             kAudioUnitType_MusicDevice
     VST3_CATEGORIES          Instrument Synth
     HARDENED_RUNTIME_ENABLED TRUE
+    ICON_BIG                 ${CMAKE_SOURCE_DIR}/../docs/icon.png   # source: docs/icon.svg
     # macOS 15 asks before an app talks to the local network; this is the reason it shows
     PLIST_TO_MERGE           "<plist><dict><key>NSLocalNetworkUsageDescription</key><string>SID Bridge finds your C64 Ultimate on your local network and plays its SID chips over it.</string></dict></plist>")
 

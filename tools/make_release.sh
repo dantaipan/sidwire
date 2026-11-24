@@ -84,7 +84,14 @@ sed "s/@VERSION@/$version/g" tools/dmg-readme.txt > "$image/Read Me.txt"
 
 dmg="$out/SID-Bridge-$version.dmg"
 rm -f "$dmg"
-hdiutil create -volname "SID Bridge $version" -srcfolder "$image" -fs HFS+ -format UDZO "$dmg" >/dev/null
+# a writable image first, so the volume can get the app's icon; then compress it
+rw="$work/rw.dmg"
+hdiutil create -volname "SID Bridge $version" -srcfolder "$image" -fs HFS+ -format UDRW "$rw" >/dev/null
+mount=$(hdiutil attach -readwrite -noverify -nobrowse "$rw" | tail -1 | awk -F'\t' '{print $NF}')
+cp "$app/Contents/Resources/AppIcon.icns" "$mount/.VolumeIcon.icns"
+xcrun SetFile -a C "$mount"
+hdiutil detach -quiet "$mount"
+hdiutil convert "$rw" -format UDZO -o "$dmg" >/dev/null
 codesign --sign "$identity" --timestamp "$dmg"
 
 echo "== Notarizing the disk image"

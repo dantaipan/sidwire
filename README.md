@@ -1,5 +1,7 @@
 # MIDI → C64 Ultimate SID bridge
 
+<img src="docs/icon.png" alt="SID Bridge icon" width="128" align="right">
+
 Play the real SID chips in a Commodore 64 Ultimate from a USB MIDI keyboard on another
 computer. The computer works out every SID register value and writes it into the C64's
 I/O space over the network, through the Ultimate DMA Service (or the REST API if that's
