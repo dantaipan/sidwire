@@ -1,0 +1,89 @@
+# Test profile: every kind of control (golden vectors + unit tests). Not for playing.
+name = "Test: every kind of control"
+description = "Exercises all triggers, ports, modes and actions."
+
+[keys]
+channel = 0
+bend_range = 7
+ignore_channels = [9, 10]
+
+[[control]]
+cc = 74
+param = "cutoff"
+
+[[control]]                # the same knob drives a second param
+cc = 74
+param = "resonance"
+
+[[control]]                # only on channel 2
+cc = 20
+channel = 2
+param = "pulse_width"
+
+[[control]]
+cc = 64
+action = "sustain_pedal"
+
+[[control]]
+cc = 80
+action = "preset_next"
+
+[[control]]
+cc = 81
+action = "preset_prev"
+
+[[control]]
+cc = 82
+action = "waveform_next"
+
+[[control]]
+cc = 83
+action = "panic"
+
+[[control]]
+cc = 84
+action = "filter_mode_next"
+
+[[control]]                # pitch bend on channel 3 sets the cutoff; other channels bend
+pitchbend = true
+channel = 3
+param = "cutoff"
+
+[[control]]                # a key used as a button
+note = 48
+channel = 1
+action = "filter_mode_next"
+
+[[control]]
+port = "controls"
+cc = 10
+mode = "relative-twos"
+steps = 16
+param = "attack"
+
+[[control]]
+port = "controls"
+cc = 11
+mode = "relative-offset"
+steps = 15
+param = "release"
+
+[[control]]
+port = "controls"
+cc = 12
+param = "volume"
+
+[[control]]
+port = "controls"
+cc = 13
+action = "sustain_pedal"
+
+[[control]]
+port = "controls"
+note = 86
+action = "preset_next"
+
+[[control]]
+port = "controls"
+pitchbend = true
+param = "resonance"

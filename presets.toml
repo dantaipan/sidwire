@@ -1,0 +1,99 @@
+# SID patches, selected with MIDI program change (program N -> preset N % count).
+# Keys left out keep their current value. Allowed keys:
+#   name, waveform, pulse_width (0-4095), attack/decay/sustain/release (0-15),
+#   filter_mode (off|lp|bp|hp|lp+hp|lp+bp|bp+hp|lp+bp+hp), filter_voices (bool),
+#   cutoff (0-2047), resonance (0-15), volume (0-15)
+# waveform: tri | saw | pulse | noise | tri+saw | tri+pulse | saw+pulse | tri+saw+pulse
+
+[[preset]]                   # 0
+name = "Square Lead"
+waveform = "pulse"
+pulse_width = 2048
+attack = 0
+decay = 9
+sustain = 10
+release = 4
+filter_mode = "lp"
+cutoff = 2047
+resonance = 0
+
+[[preset]]                   # 1
+name = "Saw Bass"
+waveform = "saw"
+attack = 0
+decay = 8
+sustain = 6
+release = 3
+filter_mode = "lp"
+cutoff = 600
+resonance = 10
+
+[[preset]]                   # 2
+name = "Thin Pulse"
+waveform = "pulse"
+pulse_width = 400
+attack = 0
+decay = 6
+sustain = 12
+release = 6
+filter_mode = "lp"
+cutoff = 2047
+resonance = 0
+
+[[preset]]                   # 3
+name = "Soft Pad"
+waveform = "tri"
+attack = 10
+decay = 10
+sustain = 12
+release = 11
+filter_mode = "lp"
+cutoff = 2047
+resonance = 0
+
+[[preset]]                   # 4
+name = "Resonant Sweep"
+waveform = "saw"
+attack = 2
+decay = 9
+sustain = 10
+release = 8
+filter_mode = "lp"
+cutoff = 300
+resonance = 15
+
+[[preset]]                   # 5
+name = "Pluck"
+waveform = "pulse"
+pulse_width = 1200
+attack = 0
+decay = 7
+sustain = 0
+release = 6
+filter_mode = "lp"
+cutoff = 1200
+resonance = 6
+
+[[preset]]                   # 6
+name = "Noise Drum"
+waveform = "noise"
+attack = 0
+decay = 6
+sustain = 0
+release = 5
+filter_mode = "hp"
+cutoff = 900
+resonance = 4
+
+[[preset]]                   # 7
+name = "Organ"
+waveform = "tri+pulse"
+pulse_width = 2048
+attack = 0
+decay = 0
+sustain = 15
+release = 3
+filter_mode = "off"
+cutoff = 2047
+resonance = 0
+

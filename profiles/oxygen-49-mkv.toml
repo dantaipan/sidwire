@@ -1,0 +1,124 @@
+# M-Audio Oxygen 49 MKV in DAW mode (Mackie 1). Format: see generic.toml.
+#
+# Keyboard setup: DAW mode on (DAW button lit), DAW set to Mackie 1 (hold SHIFT + DAW/PRESET).
+# Set the pads to channel 10 so they don't play notes: tap a pad, hold SHIFT and press
+# CHANNEL UP until the display shows 10 (Oxygen Series MKV User Guide, pp. 12 and 30).
+# Pads 1-4 send notes 40-43 and pads 5-8 send 36-39.
+
+name = "M-Audio Oxygen 49 MKV (DAW mode)"
+description = "Keys, wheels and pedal on USB MIDI; knobs and fader 1 on the Mackie/HUI port; pad 1 (channel 10) steps the filter mode."
+
+[ports]
+notes = "Oxygen 49 MKV USB MIDI"
+controls = "Oxygen 49 MKV Mackie/HUI"
+
+[keys]
+channel = 0
+bend_range = 2
+ignore_channels = [10]     # the pads
+
+# Mod wheel, sustain pedal, and the usual sound CCs (also what knobs send in Preset mode).
+[[control]]
+cc = 1
+param = "pulse_width"
+
+[[control]]
+cc = 74
+param = "cutoff"
+
+[[control]]
+cc = 71
+param = "resonance"
+
+[[control]]
+cc = 73
+param = "attack"
+
+[[control]]
+cc = 75
+param = "decay"
+
+[[control]]
+cc = 76
+param = "sustain"
+
+[[control]]
+cc = 72
+param = "release"
+
+[[control]]
+cc = 7
+param = "volume"
+
+[[control]]
+cc = 64
+action = "sustain_pedal"
+
+# Knobs 1-8 in DAW mode: Mackie V-Pots (CC 16-23, relative) on the Mackie/HUI port.
+[[control]]
+port = "controls"
+cc = 16
+mode = "relative-signed"
+param = "cutoff"
+
+[[control]]
+port = "controls"
+cc = 17
+mode = "relative-signed"
+param = "resonance"
+
+[[control]]
+port = "controls"
+cc = 18
+mode = "relative-signed"
+param = "pulse_width"
+
+[[control]]
+port = "controls"
+cc = 19
+mode = "relative-signed"
+param = "attack"
+
+[[control]]
+port = "controls"
+cc = 20
+mode = "relative-signed"
+param = "decay"
+
+[[control]]
+port = "controls"
+cc = 21
+mode = "relative-signed"
+param = "sustain"
+
+[[control]]
+port = "controls"
+cc = 22
+mode = "relative-signed"
+param = "release"
+
+[[control]]
+port = "controls"
+cc = 23
+mode = "relative-signed"
+param = "volume"
+
+# Fader 1: Mackie channel fader 1 = pitch bend on channel 1 of the Mackie/HUI port.
+[[control]]
+port = "controls"
+pitchbend = true
+channel = 1
+param = "volume"
+
+# Pad 1 (note 40 on channel 10): next filter mode.
+[[control]]
+note = 40
+channel = 10
+action = "filter_mode_next"
+
+# Free for your own: pads 2-8 (notes 41-43, 36-39 on channel 10), Loop (note 86 on the
+# controls port), the fader buttons (notes 0-7 on the controls port in Rec Arm mode), e.g.
+# [[control]]
+# port = "controls"
+# note = 86
+# action = "preset_next"

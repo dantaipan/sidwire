@@ -1,0 +1,56 @@
+# MIDI -> C64 Ultimate SID bridge configuration
+# Your own changes can go in config.local.toml (same format, read on top of this file, not in git).
+
+[device]
+host = ""                  # C64U address; empty = find it on the network (bridge.py --find)
+password = ""              # Network password; leave empty if none
+video = "PAL"              # "PAL" or "NTSC" (sets the SID clock for pitch)
+transport = "dma"          # "dma" (Ultimate DMA Service, TCP 64; falls back to HTTP if it's off) or "http"
+
+[sid]
+bases = [0xD400, 0xD420]   # SID base addresses, or "auto" to use whatever the C64U has mapped
+
+# Your MIDI keyboard / controller: ports, channel, bend range and what each knob, pad and button
+# does live in a controller profile (profiles/*.toml; generic.toml documents the format).
+#   bridge.py --list-profiles    shows them,  --profile <name or path>  overrides this setting
+[controller]
+profile = "oxygen-49-mkv"  # file name in profiles/ (without .toml), or a path to a .toml file
+notes_port = ""            # override the profile's MIDI input names ("" = use the profile's)
+controls_port = ""
+
+[engine]
+mode = "poly"              # "poly" (3 voices/SID) or "mono" (one voice per part)
+layout = "poly"            # "poly": one part over all SIDs (6 voices with 2 SIDs)
+                           # "split": MIDI ch1 -> SID 1, ch2 -> SID 2, each with its own patch
+presets = "presets.toml"   # program change N selects preset N
+legato = true              # mono only: overlapping notes glide without retrigger
+flush_ms = 5               # minimum gap between flushes
+strict_order = true        # split ADSR/control writes when both change together
+hard_restart = false       # gate-off + zero ADSR before each re-gate (ADSR-bug workaround)
+mute_after_release = true  # stop a voice's oscillator once its release is over (the 6581 leaks
+                           # a faint hum at the last note's pitch otherwise)
+velocity = "sustain"       # how hard you play: "sustain" = each note's sustain level (the attack
+                           # peak is always full, so it shapes the body of the note), "volume" =
+                           # master volume (shared by all notes on a SID), "off"
+velocity_amount = 1.0      # 0.0 = every note at full level ... 1.0 = level follows velocity fully
+knobs_target = "all"       # which part the controls-port knobs and the actions change: "all" or 1, 2
+filter_cycle = ["lp", "bp", "hp", "off"]   # filter modes the filter_mode_next action steps through
+
+# Patch loaded at startup (each part starts with this; program change / --preset override it)
+[patch]
+name = "init"
+waveform = "pulse"         # tri | saw | pulse | noise | tri+saw | tri+pulse | saw+pulse | tri+saw+pulse
+pulse_width = 2048         # 0-4095
+attack = 0                 # 0-15 each
+decay = 9
+sustain = 10
+release = 4
+filter_mode = "lp"         # lp | bp | hp | lp+hp (notch) | off
+filter_voices = true       # route all voices through the filter
+cutoff = 2047              # 0-2047 (2047 = fully open)
+resonance = 0              # 0-15
+volume = 15                # 0-15
+
+# Fallback when presets.toml is missing: program change N selects waveforms[N % len]
+[programs]
+waveforms = ["tri", "saw", "pulse", "noise", "tri+saw", "tri+pulse", "saw+pulse", "tri+saw+pulse"]

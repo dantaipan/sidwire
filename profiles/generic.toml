@@ -1,0 +1,93 @@
+# Controller profile: how one MIDI keyboard or controller talks to SID Bridge.
+#
+# This one suits most keyboards: notes on any channel, pitch bend, the mod wheel, a sustain
+# pedal, and the CC numbers many synths use for the sound. For your own controller, copy this
+# file, change the name and the [[control]] entries, and select it:
+#   bridge.py   : [controller] profile = "<file name without .toml>" in config.toml,
+#                 or --profile <name or path>. --list-profiles shows what's available.
+#   plugin / app: Profile box. Put your file in the user profiles folder (the Profile box's
+#                 "Open profiles folder..." item creates and opens it).
+# Find out what your controller sends with:  .venv/bin/python bridge.py --monitor
+#
+# ---------------------------------------------------------------------------------------
+# name        : shown in the plugin's Profile box (required)
+# description : one line about it
+#
+# [ports]     : MIDI input names (any part of the name, case doesn't matter). bridge.py only:
+#               the plugin picks its ports in its window ("auto" there uses controls below).
+#   notes     : keys, wheels, pedal ("" = the first MIDI input)
+#   controls  : an optional second input for knobs / buttons, e.g. a "DAW" or "Mackie" port
+#
+# [keys]
+#   channel         : 1-16 = only notes on that channel, 0 = any channel
+#   bend_range      : pitch bend range in semitones
+#   ignore_channels : notes on these channels never play the SID (e.g. pads on 10)
+#
+# [[control]] : one per knob, fader, wheel, pedal, pad or button. Each has
+#   a trigger   : cc = <0-127>  |  note = <0-127>  |  pitchbend = true
+#   port        : "notes" (default) or "controls"
+#   channel     : 1-16, or 0 = any (default)
+#   and either
+#     param     : pulse_width, cutoff, resonance, attack, decay, sustain, release, volume
+#       mode    : how a CC value is read: "absolute" (default, 0-127 = the full range),
+#                 "relative-signed" (Mackie-style endless knobs: 1-63 up, 65-127 down),
+#                 "relative-twos" (1-63 up, 127-65 down), "relative-offset" (64 = no change)
+#       steps   : relative modes: knob ticks for a full sweep (default 128)
+#   or
+#     action    : sustain_pedal (CC, value >= 64 = down), or one of filter_mode_next,
+#                 preset_next, preset_prev, waveform_next, panic. A note triggers on
+#                 note-on, a CC on any value >= 64 (a button pressed).
+#
+# Params set from the notes port go to the part that plays that channel (split layout: ch1 ->
+# SID 1, ch2 -> SID 2). Params from the controls port, and all actions except the sustain pedal,
+# go to the part(s) chosen by [engine] knobs_target in config.toml. CC 120/123 (all sound/notes
+# off) always panics. Notes that trigger an action never play the SID.
+# ---------------------------------------------------------------------------------------
+
+name = "Generic MIDI keyboard"
+description = "Any MIDI keyboard: notes on any channel, pitch bend, mod wheel, sustain pedal and common sound CCs."
+
+[ports]
+notes = ""
+controls = ""
+
+[keys]
+channel = 0
+bend_range = 2
+ignore_channels = []
+
+[[control]]
+cc = 1                     # mod wheel
+param = "pulse_width"
+
+[[control]]
+cc = 74                    # "brightness": cutoff on most synths
+param = "cutoff"
+
+[[control]]
+cc = 71                    # "timbre / harmonic content": resonance
+param = "resonance"
+
+[[control]]
+cc = 73
+param = "attack"
+
+[[control]]
+cc = 75
+param = "decay"
+
+[[control]]
+cc = 76
+param = "sustain"
+
+[[control]]
+cc = 72
+param = "release"
+
+[[control]]
+cc = 7                     # channel volume
+param = "volume"
+
+[[control]]
+cc = 64                    # sustain pedal
+action = "sustain_pedal"

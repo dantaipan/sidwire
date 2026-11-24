@@ -1,0 +1,18 @@
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+
+# C++ build
+cpp/build/
+
+# Your own settings (see config.toml)
+config.local.toml
+
+# Local-only: hardware recordings, raw benchmark results, archived versions
+captures/
+bench_*.json
+attic/
+
+# macOS
+.DS_Store
