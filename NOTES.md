@@ -534,3 +534,23 @@ The player was uninstalled from the C64 (IRQ vector back at $EA31).
     (expected 250, sd 15 ms).
   - Chord on A2: 110 / 164 / 220 Hz (A2 E3 A3).
 - Tests: Python 155, C++ 79; auval and pluginval pass.
+
+## Latency write-up and first release — 2026-11-24
+- README "Latency: what to expect" summarizes the measurements above.
+  - A write lands in ≈ 1 ms over DMA, ≈ 7 ms over HTTP.
+  - Note → sound in the network audio stream is ≈ 40 / 42 ms. The C64U's analog output is
+    estimated at a few ms: it isn't measured, since that needs an analog loopback.
+  - Stream C64U audio adds ≈ 20 ms; knob changes take 25 ms in the worst case; the DAW adds up
+    to one buffer; and there's the jitter.
+- `tools/make_release.sh`, modelled on RoughTrack's:
+  1. The `dist` preset builds universal (arm64 + x86_64), macOS 13+, with no tests.
+  2. It signs the app, the AU and the VST3 with Developer ID (hardened runtime, timestamp),
+     notarizes them in one zip and staples each.
+  3. It builds the DMG: the app, an Applications link, Plug-ins/ with links to
+     /Library/Audio/Plug-Ins/{Components,VST3}, and "Read Me.txt" (from tools/dmg-readme.txt).
+  4. It signs, notarizes and staples the DMG, then runs spctl and stapler checks.
+  - Credentials: the `rifftrack-notary` keychain profile, shared with RoughTrack.
+- The app's Info.plist now has `NSLocalNetworkUsageDescription`, for macOS 15's local-network
+  prompt (via PLIST_TO_MERGE); HARDENED_RUNTIME_ENABLED is on.
+- v0.1.0: dist/SID-Bridge-0.1.0.dmg, 19 MB; notarization accepted for the bundles and the DMG;
+  spctl reports "Notarized Developer ID". Notes are in docs/releases/v0.1.0.md.

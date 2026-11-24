@@ -1,23 +1,87 @@
 {
   "version": 6,
-  "cmakeMinimumRequired": { "major": 3, "minor": 22, "patch": 0 },
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 22,
+    "patch": 0
+  },
   "configurePresets": [
-    { "name": "base", "hidden": true, "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/${presetName}" },
-    { "name": "debug", "displayName": "Debug", "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "MSID_COPY_PLUGINS": "OFF" } },
-    { "name": "release", "displayName": "Release", "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release" } },
-    { "name": "core", "displayName": "Core + tests only (no JUCE)", "inherits": "base",
-      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "MSID_BUILD_PLUGIN": "OFF" } }
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "debug",
+      "displayName": "Debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "MSID_COPY_PLUGINS": "OFF"
+      }
+    },
+    {
+      "name": "release",
+      "displayName": "Release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "core",
+      "displayName": "Core + tests only (no JUCE)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "MSID_BUILD_PLUGIN": "OFF"
+      }
+    },
+    {
+      "name": "dist",
+      "displayName": "Distribution (universal, no tests)",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_OSX_ARCHITECTURES": "arm64;x86_64",
+        "MSID_BUILD_TESTS": "OFF",
+        "MSID_COPY_PLUGINS": "OFF"
+      }
+    }
   ],
   "buildPresets": [
-    { "name": "debug", "configurePreset": "debug" },
-    { "name": "release", "configurePreset": "release" },
-    { "name": "core", "configurePreset": "core" }
+    {
+      "name": "debug",
+      "configurePreset": "debug"
+    },
+    {
+      "name": "release",
+      "configurePreset": "release"
+    },
+    {
+      "name": "core",
+      "configurePreset": "core"
+    },
+    {
+      "name": "dist",
+      "configurePreset": "dist"
+    }
   ],
   "testPresets": [
-    { "name": "core", "configurePreset": "core", "output": { "outputOnFailure": true } },
-    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } }
+    {
+      "name": "core",
+      "configurePreset": "core",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
   ]
 }

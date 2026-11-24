@@ -1,0 +1,104 @@
+#!/bin/bash
+# Builds SID Bridge for distribution: the standalone app, the Audio Unit and the VST3, universal
+# (Apple Silicon + Intel), signed with Developer ID (hardened runtime), notarized and stapled,
+# inside a signed, notarized and stapled disk image: dist/SID-Bridge-<version>.dmg.
+#
+# Needs Xcode command line tools, CMake + Ninja, a "Developer ID Application" certificate in the
+# keychain, and notarytool credentials saved under a keychain profile:
+#   xcrun notarytool store-credentials <profile> --apple-id ... --team-id ...
+# The profile is $NOTARY_PROFILE, else roughtrack-notary, else rifftrack-notary (shared with
+# RoughTrack's release script).
+#
+# The version is the CMake project version (cpp/CMakeLists.txt), which the About box and the
+# update checker use. Publish the disk image on github.com/dantaipan/sid-bridge as release
+# v<version> so the update checker finds it.
+
+set -euo pipefail
+
+identity="Developer ID Application"
+profile="${NOTARY_PROFILE:-}"
+if [ -z "$profile" ]; then
+    for p in roughtrack-notary rifftrack-notary; do
+        if xcrun notarytool history --keychain-profile "$p" >/dev/null 2>&1; then
+            profile="$p"
+            break
+        fi
+    done
+fi
+if [ -z "$profile" ]; then
+    echo "No notarytool credentials found: set NOTARY_PROFILE (see the top of this script)." >&2
+    exit 1
+fi
+
+cd "$(dirname "$0")/.."
+root="$(pwd)"
+version=$(sed -nE 's/^project\(MidiSid VERSION ([0-9.]+).*/\1/p' cpp/CMakeLists.txt)
+out="$root/dist"
+work="$out/work"
+artefacts="$root/cpp/build/dist/plugin/SidBridge_artefacts/Release"
+
+if [ ! -f cpp/external/JUCE/CMakeLists.txt ]; then
+    echo "JUCE is missing: git submodule update --init" >&2
+    exit 1
+fi
+
+rm -rf "$work"
+mkdir -p "$work"
+
+echo "== Building SID Bridge $version (universal)"
+(cd cpp && cmake --preset dist >/dev/null && cmake --build --preset dist)
+
+app="$work/SID Bridge.app"
+au="$work/SID Bridge.component"
+vst3="$work/SID Bridge.vst3"
+ditto "$artefacts/Standalone/SID Bridge.app" "$app"
+ditto "$artefacts/AU/SID Bridge.component" "$au"
+ditto "$artefacts/VST3/SID Bridge.vst3" "$vst3"
+
+echo "== Signing"
+for bundle in "$app" "$au" "$vst3"; do
+    codesign --force --options runtime --timestamp --sign "$identity" "$bundle"
+    codesign --verify --strict --verbose=1 "$bundle"
+done
+codesign --display --verbose=2 "$app" 2>&1 | grep -E "Authority=Developer ID Application|Timestamp=|flags=.*runtime"
+lipo -archs "$app/Contents/MacOS/SID Bridge"
+
+echo "== Notarizing the app and plug-ins"
+(cd "$work" && ditto -c -k --keepParent "SID Bridge.app" bundles.zip \
+    && zip -qry bundles.zip "SID Bridge.component" "SID Bridge.vst3")
+xcrun notarytool submit "$work/bundles.zip" --keychain-profile "$profile" --wait
+for bundle in "$app" "$au" "$vst3"; do
+    xcrun stapler staple "$bundle"
+done
+
+echo "== Making the disk image"
+image="$work/image"
+mkdir -p "$image/Plug-ins"
+ditto "$app" "$image/SID Bridge.app"
+ditto "$au" "$image/Plug-ins/SID Bridge.component"
+ditto "$vst3" "$image/Plug-ins/SID Bridge.vst3"
+ln -s /Applications "$image/Applications"
+ln -s /Library/Audio/Plug-Ins/Components "$image/Plug-ins/Audio Unit folder"
+ln -s /Library/Audio/Plug-Ins/VST3 "$image/Plug-ins/VST3 folder"
+sed "s/@VERSION@/$version/g" tools/dmg-readme.txt > "$image/Read Me.txt"
+
+dmg="$out/SID-Bridge-$version.dmg"
+rm -f "$dmg"
+hdiutil create -volname "SID Bridge $version" -srcfolder "$image" -fs HFS+ -format UDZO "$dmg" >/dev/null
+codesign --sign "$identity" --timestamp "$dmg"
+
+echo "== Notarizing the disk image"
+xcrun notarytool submit "$dmg" --keychain-profile "$profile" --wait
+xcrun stapler staple "$dmg"
+
+echo "== Checking what a downloaded copy will see"
+spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
+spctl --assess --type execute --verbose=2 "$app"
+for bundle in "$au" "$vst3"; do
+    xcrun stapler validate "$bundle"
+done
+xcrun stapler validate "$dmg"
+
+rm -rf "$work"
+echo "SHA-256: $(shasum -a 256 "$dmg" | cut -d' ' -f1)"
+echo "Done: $dmg"

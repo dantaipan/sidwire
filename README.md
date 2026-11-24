@@ -36,11 +36,40 @@ There are two front ends, and both use the same engine:
 - Reconnects automatically if the network drops, then rewrites every register.
 - Only one bridge can drive a C64U at a time. The script and the plugin share a lock file.
 
-The bridge uses the **Ultimate DMA Service** (C64U menu → Network Settings) by default. A
-write lands about 1 ms after it's sent. If the service is off, the bridge falls back to the
-REST API, where a write takes about 7 ms (set by the C64U's HTTP server, not the network).
-End to end, notes play about 2 ms sooner over DMA. See `NOTES.md`. End to end, from MIDI out to SID sound, the Python bridge and the
-plugin measure the same within 1 ms.
+The bridge uses the **Ultimate DMA Service** (C64U menu → Network Settings) by default and
+falls back to the REST API when it's off. See [Latency](#latency-what-to-expect).
+
+## Latency: what to expect
+
+Short version: playing live through the C64U's own audio output feels like a hardware synth
+over MIDI, a few milliseconds behind your key. **Stream C64U audio** is for recording and
+monitoring in a DAW, not for tight live playing: it adds about 40 ms.
+
+All numbers were measured on a C64 Ultimate (firmware 1.2.1) on wired Ethernet; the details
+are in `NOTES.md`.
+
+| Step | Typical time | Notes |
+|---|---|---|
+| A SID register write reaches the chip | **≈ 1 ms** over the DMA service, **≈ 7 ms** over HTTP | HTTP is limited by the C64U's web server, not the network; Wi-Fi vs Ethernet made no difference to it |
+| Note on → the SID plays it (C64U's audio out) | **a few ms** (estimate: MIDI in + up to one 5 ms flush + the write above) | Not measured directly: that needs a cable from the C64U's output back into an audio input |
+| Note on → sound in the C64U's network audio stream | **≈ 40 ms** (DMA), ≈ 42 ms (HTTP) | Measured end to end; most of it is the stream's own buffering. The Python bridge and the plugin are within 1 ms of each other |
+| **Stream C64U audio** in the plugin | adds a **≈ 20 ms** buffer on top | So DAW monitoring of the C64 is roughly 40–60 ms behind the key |
+| Turning a knob → the new value on the chip | usually a few ms; **25 ms** worst case | Worst case = both SIDs' cutoff changed every millisecond for 3 s (DMA) |
+
+Things that affect it:
+
+- **Use the DMA service.** It's on by default and SID Bridge says "via DMA" when it's in use.
+  Switch it on in the C64U menu → Network Settings → Ultimate DMA Service.
+- **In a DAW**, notes from a track go out when the host processes its audio block, so add up to
+  one buffer (e.g. 512 samples ≈ 11 ms at 48 kHz). Playing straight from your keyboard via
+  **Notes in** avoids that.
+- **Timing jitter:** notes are timed on the computer and sent over the network, so expect a
+  few ms of jitter. The arpeggiator measured 250 ms steps at 249.5 ms on average (sd 15 ms).
+  Very fast sequences (steps of 20 ms or less) can show the occasional 70–120 ms hiccup from
+  the C64U's network handling, so frame-exact chip tricks aren't what this is for.
+- **Recording the C64 into a DAW** with Stream C64U audio: the recorded track is late by the
+  stream delay. SID Bridge doesn't report a latency to the host yet, so nudge the recorded
+  audio earlier by about 40–60 ms, or record the C64U's analog output instead.
 
 ## Getting the code
 
@@ -122,6 +151,15 @@ JUCE" footnote on Setup; in the standalone app also SID Bridge menu → About SI
 be switched off in About) and has SID Bridge → Check for Updates…; the plugin checks only when
 you press "Check for updates" in About. Nothing is sent beyond a request for the latest
 release of [dantaipan/sid-bridge](https://github.com/dantaipan/sid-bridge/releases).
+
+## Releasing
+
+`tools/make_release.sh` builds the app, the AU and the VST3 universal (Apple Silicon + Intel),
+signs them with Developer ID (hardened runtime), notarizes and staples them, and makes
+`dist/SID-Bridge-<version>.dmg`, also signed, notarized and stapled. It needs a
+"Developer ID Application" certificate and notarytool credentials (see the script). The
+version is the CMake project version in `cpp/CMakeLists.txt`. Publish the disk image as GitHub
+release `v<version>` with notes from `docs/releases/`; the update checker looks there.
 
 ## Licence
 
