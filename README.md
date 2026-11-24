@@ -14,7 +14,7 @@ There are two front ends, and both use the same engine:
 - **SID Bridge**: a JUCE instrument plugin (VST3 and AU) plus a standalone app, built from
   `cpp/`.
 
-![SID Bridge plugin](docs/sid-bridge-plugin.png)
+![SID Bridge: the Play tab, with the arpeggiator running over a held chord](docs/sid-bridge-plugin.png)
 
 ## What it does
 

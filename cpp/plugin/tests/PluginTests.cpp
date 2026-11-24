@@ -467,9 +467,14 @@ TEST_CASE ("hardware: C64 audio through the plugin", "[.hardware]")
 TEST_CASE ("editor snapshot", "[.snapshot]")
 {
     Rig r ("poly", "oxygen-49-mkv");
-    for (int n : { 48, 52, 55, 72 })
-        r.midi (juce::MidiMessage::noteOn (1, n, (juce::uint8) 100));
     r.proc.setCurrentProgram (4);
+    // the README shot: the arpeggiator running over a held chord
+    r.setPlain ("voice_mode", 6.0f);
+    r.setPlain ("arp_octaves", 2.0f);
+    r.setPlain ("arp_gate", 100.0f);
+    pump (100);
+    for (int n : { 48, 52, 55 })
+        r.midi (juce::MidiMessage::noteOn (1, n, (juce::uint8) 100));
     REQUIRE (waitFor ([&] { return r.proc.bridge().status().presetName == "Resonant Sweep"; }));
     std::unique_ptr<juce::AudioProcessorEditor> ed (r.proc.createEditor());
     auto* editor = dynamic_cast<SidBridgeEditor*> (ed.get());
@@ -485,8 +490,6 @@ TEST_CASE ("editor snapshot", "[.snapshot]")
     auto base = juce::SystemStats::getEnvironmentVariable ("MSID_SNAPSHOT", "/tmp/sidbridge.png");
     editor->showTab (SidBridgeEditor::Tab::play);
     shoot (base);
-    r.setPlain ("voice_mode", 6.0f);   // arp
-    shoot (base.replace (".png", "-arp.png"));
     r.setPlain ("voice_mode", 5.0f);   // chord
     shoot (base.replace (".png", "-chord.png"));
     r.setPlain ("voice_mode", 0.0f);
