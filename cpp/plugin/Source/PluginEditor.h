@@ -1,4 +1,4 @@
-// The SID Bridge window: a header (Play / Setup tabs, connection status, Stream C64U audio,
+// The SIDwire window: a header (Play / Setup tabs, connection status, Stream C64U audio,
 // Silence) over the Play or the Setup page. Opens on Setup until it has connected once.
 #pragma once
 

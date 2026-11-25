@@ -1,4 +1,4 @@
-// SID Bridge's look and its small widgets: knobs, toggle chips, segmented controls, the envelope
+// SIDwire's look and its small widgets: knobs, toggle chips, segmented controls, the envelope
 // drawing, the voice strip, card backgrounds.
 #pragma once
 

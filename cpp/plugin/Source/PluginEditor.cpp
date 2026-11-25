@@ -12,7 +12,7 @@ SidBridgeEditor::SidBridgeEditor (SidBridgeProcessor& p)
     setLookAndFeel (&laf);
 
     title.setComponentID ("title");
-    title.setTooltip ("About SID Bridge");
+    title.setTooltip ("About SIDwire");
     title.getProperties().set ("border", 0);
     title.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
     title.setColour (juce::TextButton::textColourOffId, juce::Colours::transparentBlack);   // the title is painted
@@ -42,7 +42,7 @@ SidBridgeEditor::SidBridgeEditor (SidBridgeProcessor& p)
     addAndMakeVisible (statusPill);
 
     stream.setComponentID ("stream");
-    stream.setTooltip ("Play the C64U's own audio out of SID Bridge, streamed over the network (adds about 30-40 ms). "
+    stream.setTooltip ("Play the C64U's own audio out of SIDwire, streamed over the network (adds about 30-40 ms). "
                        "It takes the stream over from other apps such as PS64.");
     stream.onClick = [this] {
         auto s = proc.bridge().getSettings();
@@ -111,7 +111,7 @@ void SidBridgeEditor::timerCallback()
     if (auto o = updateChecker->takeOutcome())
     {
         about.setUpdateStatus (o->error.isNotEmpty() ? o->error
-                               : o->offer ? "SID Bridge " + o->release->version.trimCharactersAtStart ("vV") + " is available."
+                               : o->offer ? "SIDwire " + o->release->version.trimCharactersAtStart ("vV") + " is available."
                                           : "Up to date (" + updates::currentVersion() + ").");
         if (o->offer || o->manual)   // automatic checks only speak up when there's something new
         {
@@ -147,7 +147,7 @@ void SidBridgeEditor::paint (juce::Graphics& g)
     g.fillAll (bg);
     g.setColour (bright);
     g.setFont (ui::font (18.0f, true));
-    g.drawText ("SID Bridge", 20, 0, 120, 56, juce::Justification::centredLeft);
+    g.drawText ("SIDwire", 20, 0, 120, 56, juce::Justification::centredLeft);
     auto tabs = playTab.getBounds().getUnion (setupTab.getBounds()).expanded (3).toFloat();
     g.setColour (panel);
     g.fillRoundedRectangle (tabs, 8.0f);

@@ -65,7 +65,11 @@ private:
     void fillAudioOutputs();
     juce::String notesNoneLabel() const;
 
-    juce::TextButton footnote;   // "Made with JUCE · About SID Bridge"
+    juce::TextButton footnote;   // "Made with JUCE · About SIDwire"
+    // old "SID Bridge" bundles (from before the rename) still installed: offer to show them
+    juce::TextButton oldInstall;
+    juce::Array<juce::File> oldBundles;
+    void checkOldInstall();
 
     // ready bar
     juce::TextButton startPlaying { "Start playing" };

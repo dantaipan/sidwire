@@ -4,7 +4,7 @@
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
-/// SID Bridge: incoming MIDI plays the real SID chip(s) in a C64 Ultimate over the network
+/// SIDwire: incoming MIDI plays the real SID chip(s) in a C64 Ultimate over the network
 /// (see BridgeController). Its audio output is silent unless "C64 audio" is on: then it plays
 /// the C64U's network audio stream (AudioStreamReceiver).
 class SidBridgeProcessor : public juce::AudioProcessor, private juce::Timer

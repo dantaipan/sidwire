@@ -1,12 +1,13 @@
-// SID Bridge's own standalone app (JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP): JUCE's audio engine
+// SIDwire's own standalone app (JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP): JUCE's audio engine
 // for standalone plugins (StandalonePluginHolder), in a plain window without JUCE's generic
 // "Options" bar. Setup chooses everything instead: the audio output (StandaloneHooks) and the
-// MIDI ports, which SID Bridge opens itself. The holder's own MIDI inputs stay off, so nothing
+// MIDI ports, which SIDwire opens itself. The holder's own MIDI inputs stay off, so nothing
 // can arrive twice (e.g. the Oxygen's Mackie port as keys).
 //
 // Settings live where JUCE's default app kept them (~/Library/Application Support/
-// SID Bridge.settings), so nothing is lost by switching.
+// SIDwire.settings; copied from SID Bridge.settings on the first run after the rename).
 #include "PluginEditor.h"      // ours first: the plugin-client headers below change the namespace context
+#include "Migration.h"
 #include "StandaloneHooks.h"
 #include "Ui.h"
 
@@ -57,7 +58,7 @@ private:
     juce::StandalonePluginHolder& holder;
 };
 
-/// The app menu ("SID Bridge") gets "About SID Bridge...".
+/// The app menu ("SIDwire") gets "About SIDwire...".
 class AppMenu final : public juce::MenuBarModel
 {
 public:
@@ -79,6 +80,7 @@ class SidBridgeApp final : public juce::JUCEApplication
 public:
     SidBridgeApp()
     {
+        migration::migrate (juce::CharPointer_UTF8 (JucePlugin_Name), ".settings");   // from SID Bridge 0.1.x
         juce::PropertiesFile::Options options;
         options.applicationName = juce::CharPointer_UTF8 (JucePlugin_Name);
         options.filenameSuffix = ".settings";
@@ -95,7 +97,7 @@ public:
     void initialise (const juce::String&) override
     {
         holder = std::make_unique<juce::StandalonePluginHolder> (properties.getUserSettings(), false);
-        for (auto& d : juce::MidiInput::getAvailableDevices())   // SID Bridge opens its own ports
+        for (auto& d : juce::MidiInput::getAvailableDevices())   // SIDwire opens its own ports
             holder->deviceManager.setMidiInputDeviceEnabled (d.identifier, false);
         standalone::deviceManager() = &holder->deviceManager;
         if (! juce::Desktop::getInstance().getDisplays().displays.isEmpty())
@@ -113,7 +115,7 @@ public:
                 editor->checkForUpdates();
         };
         juce::PopupMenu extra;
-        extra.addItem (1, "About SID Bridge...");
+        extra.addItem (1, "About SIDwire...");
         extra.addItem (2, "Check for Updates...");
         juce::MenuBarModel::setMacMainMenu (&menu, &extra);
        #endif

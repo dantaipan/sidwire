@@ -1,6 +1,6 @@
-# MIDI → C64 Ultimate SID bridge
+# SIDwire
 
-<img src="docs/icon.png" alt="SID Bridge icon" width="128" align="right">
+<img src="docs/icon.png" alt="SIDwire icon" width="128" align="right">
 
 Play the real SID chips in a Commodore 64 Ultimate from a USB MIDI keyboard on another
 computer. The computer works out every SID register value and writes it into the C64's
@@ -11,10 +11,11 @@ There are two front ends, and both use the same engine:
 
 - **`bridge.py`**: a Python command-line bridge. It's the prototype, and it's the reference
   that the C++ version is checked against.
-- **SID Bridge**: a JUCE instrument plugin (VST3 and AU) plus a standalone app, built from
-  `cpp/`.
+- **SIDwire**: a JUCE instrument plugin (VST3 and AU) plus a standalone app, built from
+  `cpp/`. Up to version 0.1.1 it was called SID Bridge (see [the 0.2.0 notes](docs/releases/v0.2.0.md)
+  if you have that installed).
 
-![SID Bridge: the Play tab, with the arpeggiator running over a held chord](docs/sid-bridge-plugin.png)
+![SIDwire: the Play tab, with the arpeggiator running over a held chord](docs/sidwire-plugin.png)
 
 ## What it does
 
@@ -60,7 +61,7 @@ are in `NOTES.md`.
 
 Things that affect it:
 
-- **Use the DMA service.** It's on by default and SID Bridge says "via DMA" when it's in use.
+- **Use the DMA service.** It's on by default and SIDwire says "via DMA" when it's in use.
   Switch it on in the C64U menu → Network Settings → Ultimate DMA Service.
 - **In a DAW**, notes from a track go out when the host processes its audio block, so add up to
   one buffer (e.g. 512 samples ≈ 11 ms at 48 kHz). Playing straight from your keyboard via
@@ -70,13 +71,13 @@ Things that affect it:
   Very fast sequences (steps of 20 ms or less) can show the occasional 70–120 ms hiccup from
   the C64U's network handling, so frame-exact chip tricks aren't what this is for.
 - **Recording the C64 into a DAW** with Stream C64U audio: the recorded track is late by the
-  stream delay. SID Bridge doesn't report a latency to the host yet, so nudge the recorded
+  stream delay. SIDwire doesn't report a latency to the host yet, so nudge the recorded
   audio earlier by about 40–60 ms, or record the C64U's analog output instead.
 
 ## Getting the code
 
 ```sh
-git clone --recursive https://github.com/dantaipan/sid-bridge.git
+git clone --recursive https://github.com/dantaipan/sidwire.git
 # already cloned without --recursive?  git submodule update --init   (JUCE, for the plugin)
 ```
 
@@ -112,7 +113,7 @@ A Release build copies the AU and VST3 into `~/Library/Audio/Plug-Ins`.
 
 To use it:
 
-1. Load **SID Bridge** as an instrument (or open the standalone app). The first time, it opens
+1. Load **SIDwire** as an instrument (or open the standalone app). The first time, it opens
    on **Setup**:
    - **Your C64 Ultimate**: it searches your network by itself (**Find** does it again) and
      connects when it finds one. You can also type the address. "More settings" has the
@@ -138,7 +139,7 @@ To use it:
    what controls it; "Forget" in the same menu removes it.
 4. **Silence** stops every note on the C64 at once (the volume comes back with the next note):
    for a note stuck because its note-off got lost.
-5. **Stream C64U audio** plays the C64U's network audio stream out of SID Bridge, so you hear
+5. **Stream C64U audio** plays the C64U's network audio stream out of SIDwire, so you hear
    the real SIDs through your audio interface and a DAW can record them on the plugin's track.
    It adds roughly 30–40 ms on top of the C64U's own output, so for playing live the C64U's
    audio out is snappier. The C64U streams to one place at a time: this takes the stream over
@@ -146,19 +147,19 @@ To use it:
 
 Without **Stream C64U audio** the plugin's own output is silent: the sound comes out of the C64U.
 
-**About SID Bridge** (version and licensing): click the "SID Bridge" title or the "Made with
-JUCE" footnote on Setup; in the standalone app also SID Bridge menu → About SID Bridge.
+**About SIDwire** (version and licensing): click the "SIDwire" title or the "Made with
+JUCE" footnote on Setup; in the standalone app also SIDwire menu → About SIDwire.
 
 **Updates:** the standalone app asks GitHub once a day whether a newer release is out (it can
-be switched off in About) and has SID Bridge → Check for Updates…; the plugin checks only when
+be switched off in About) and has SIDwire → Check for Updates…; the plugin checks only when
 you press "Check for updates" in About. Nothing is sent beyond a request for the latest
-release of [dantaipan/sid-bridge](https://github.com/dantaipan/sid-bridge/releases).
+release of [dantaipan/sidwire](https://github.com/dantaipan/sidwire/releases).
 
 ## Releasing
 
 `tools/make_release.sh` builds the app, the AU and the VST3 universal (Apple Silicon + Intel),
 signs them with Developer ID (hardened runtime), notarizes and staples them, and makes
-`dist/SID-Bridge-<version>.dmg`, also signed, notarized and stapled. It needs a
+`dist/SIDwire-<version>.dmg`, also signed, notarized and stapled. It needs a
 "Developer ID Application" certificate and notarytool credentials (see the script). The
 version is the CMake project version in `cpp/CMakeLists.txt`. Publish the disk image as GitHub
 release `v<version>` with notes from `docs/releases/`; the update checker looks there.
@@ -168,7 +169,7 @@ release `v<version>` with notes from `docs/releases/`; the update checker looks 
 GNU AGPL 3.0 or later (see LICENSE). The plugin and app are built with
 [JUCE](https://juce.com), whose modules are dual-licensed under the
 [GNU AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html) and the commercial
-[JUCE licence](https://juce.com/legal/juce-9-licence/); SID Bridge uses JUCE under the AGPL.
+[JUCE licence](https://juce.com/legal/juce-9-licence/); SIDwire uses JUCE under the AGPL.
 
 ## Your controller: profiles
 
@@ -204,7 +205,7 @@ action = "preset_next"
 - **Python bridge:** put the file in `profiles/` and set `[controller] profile = "<name>"` in
   `config.toml`, or pass `--profile path/to/file.toml`.
 - **Plugin / app:** Profile → "Open profiles folder..." opens
-  `~/Library/Application Support/SID Bridge/Profiles` (with the built-ins as examples). Files
+  `~/Library/Application Support/SIDwire/Profiles` (with the built-ins as examples). Files
   there show up in the Profile box. A file with a built-in's name replaces that built-in.
 - A mistake in a profile names the file and the line. The plugin then falls back to the generic
   profile and says why in its status line.

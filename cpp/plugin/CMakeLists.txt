@@ -1,11 +1,11 @@
-# SID Bridge: VST3 / AU / Standalone instrument that plays the C64U's SID chips.
+# SIDwire: VST3 / AU / Standalone instrument that plays the C64U's SID chips.
 juce_add_plugin(SidBridge
     COMPANY_NAME             "MidiSid"
     BUNDLE_ID                "com.midisid.sidbridge"
     PLUGIN_MANUFACTURER_CODE Msid
     PLUGIN_CODE              Sidb
     FORMATS                  VST3 AU Standalone
-    PRODUCT_NAME             "SID Bridge"
+    PRODUCT_NAME             "SIDwire"
     IS_SYNTH                 TRUE
     NEEDS_MIDI_INPUT         TRUE
     NEEDS_MIDI_OUTPUT        FALSE
@@ -17,7 +17,7 @@ juce_add_plugin(SidBridge
     HARDENED_RUNTIME_ENABLED TRUE
     ICON_BIG                 ${CMAKE_SOURCE_DIR}/../docs/icon.png   # source: docs/icon.svg
     # macOS 15 asks before an app talks to the local network; this is the reason it shows
-    PLIST_TO_MERGE           "<plist><dict><key>NSLocalNetworkUsageDescription</key><string>SID Bridge finds your C64 Ultimate on your local network and plays its SID chips over it.</string></dict></plist>")
+    PLIST_TO_MERGE           "<plist><dict><key>NSLocalNetworkUsageDescription</key><string>SIDwire finds your C64 Ultimate on your local network and plays its SID chips over it.</string></dict></plist>")
 
 juce_add_binary_data(SidBridgeData
     SOURCES ${CMAKE_SOURCE_DIR}/../presets.toml
@@ -44,9 +44,10 @@ target_sources(SidBridge PRIVATE
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
     Source/Profiles.cpp
-    Source/Profiles.h)
+    Source/Profiles.h
+    Source/Migration.h)
 
-# SID Bridge's own standalone window (Source/StandaloneApp.cpp) instead of JUCE's generic one
+# SIDwire's own standalone window (Source/StandaloneApp.cpp) instead of JUCE's generic one
 target_sources(SidBridge_Standalone PRIVATE Source/StandaloneApp.cpp)
 target_compile_definitions(SidBridge_Standalone PRIVATE JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1)
 
@@ -82,7 +83,7 @@ if(MSID_BUILD_TESTS)
         Source/Profiles.cpp)
     target_include_directories(sidbridge-tests PRIVATE Source ${CMAKE_SOURCE_DIR}/core/tests)
     target_compile_definitions(sidbridge-tests PRIVATE
-        JucePlugin_Name="SID Bridge"
+        JucePlugin_Name="SIDwire"
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_MODAL_LOOPS_PERMITTED=1)   # pump messages (write-back timer)

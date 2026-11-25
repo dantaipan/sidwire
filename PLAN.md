@@ -182,6 +182,11 @@ filter live with acceptable feel.
   octaves, gate; MIDI clock, else host tempo or BPM). Python + C++ (parity vectors), plugin
   parameters + Voice mode bar on Play, a "voice_mode_next" profile action.
 
+## Renamed to SIDwire — 2026-11-24
+- "C64 Bridge" (a remote-control tool for the C64U) was too close a name. The plugin and app are
+  now **SIDwire** (repo `dantaipan/sidwire`), from release 0.2.0. Plugin codes and bundle id are
+  unchanged, so DAW projects still open; settings and profiles are copied over on first run.
+
 ## Future enhancements (noted 2026-11-23)
 - Stereo balance in poly mode (notes alternate L/R in threes because the sockets are panned
   L3/R3). The user is deciding between centring the mixer, a fill-SID-1-first allocator, or split.

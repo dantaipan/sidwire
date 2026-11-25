@@ -1,4 +1,4 @@
-# Controller profile: how one MIDI keyboard or controller talks to SID Bridge.
+# Controller profile: how one MIDI keyboard or controller talks to SIDwire.
 #
 # This one suits most keyboards: notes on any channel, pitch bend, the mod wheel, a sustain
 # pedal, and the CC numbers many synths use for the sound. For your own controller, copy this

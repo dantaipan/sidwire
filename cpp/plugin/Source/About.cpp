@@ -28,7 +28,7 @@ AboutPanel::AboutPanel()
     };
     addAndMakeVisible (checkUpdates);
     automatic.setComponentID ("checkAutomatically");
-    automatic.setTooltip ("The app asks GitHub once a day whether a newer SID Bridge is out. Nothing else is sent.");
+    automatic.setTooltip ("The app asks GitHub once a day whether a newer SIDwire is out. Nothing else is sent.");
     automatic.onClick = [this] { checker->setChecksAutomatically (automatic.getToggleState()); };
     addChildComponent (automatic);
 }
@@ -75,7 +75,7 @@ void AboutPanel::paint (juce::Graphics& g)
     auto r = c.reduced (28, 24);
     g.setColour (bright);
     g.setFont (ui::font (22.0f, true));
-    g.drawText ("SID Bridge", r.removeFromTop (30), juce::Justification::centredLeft);
+    g.drawText ("SIDwire", r.removeFromTop (30), juce::Justification::centredLeft);
     g.setColour (dim);
     g.setFont (ui::font (13.0f));
     g.drawText ("Version " + version(), r.removeFromTop (20), juce::Justification::centredLeft);
@@ -90,7 +90,7 @@ void AboutPanel::paint (juce::Graphics& g)
     r.removeFromTop (6);
     g.setColour (text);
     g.setFont (ui::font (13.0f));
-    g.drawFittedText ("SID Bridge uses the JUCE framework. The JUCE modules are dual-licensed under the "
+    g.drawFittedText ("SIDwire uses the JUCE framework. The JUCE modules are dual-licensed under the "
                       "GNU AGPLv3 and the commercial JUCE licence.",
                       r.removeFromTop (40), juce::Justification::topLeft, 2);
     r.removeFromTop (6 + 24 + 22);
@@ -175,13 +175,13 @@ void UpdatePanel::show (const updates::UpdateChecker::Outcome& o)
     {
         version = o.release->version;
         downloadUrl = o.release->downloadUrl;
-        title = "SID Bridge " + version.trimCharactersAtStart ("vV") + " is available";
+        title = "SIDwire " + version.trimCharactersAtStart ("vV") + " is available";
         subtitle = "You have " + updates::currentVersion() + ".";
         notes.setText (updates::runsToText (updates::notesToRuns (o.release->notes)), false);
     }
     else
     {
-        title = o.error.isNotEmpty() ? juce::String ("Couldn't check for updates") : juce::String ("SID Bridge is up to date");
+        title = o.error.isNotEmpty() ? juce::String ("Couldn't check for updates") : juce::String ("SIDwire is up to date");
         subtitle = o.error.isNotEmpty() ? o.error : "Version " + updates::currentVersion() + " is the latest.";
         notes.clear();
     }

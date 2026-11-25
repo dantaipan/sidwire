@@ -1,4 +1,5 @@
 #include "Profiles.h"
+#include "Migration.h"
 
 #include "BinaryData.h"
 
@@ -49,8 +50,8 @@ juce::File Profiles::userDir()
     std::lock_guard g (dirMutex);
     if (testDir != juce::File())
         return testDir;
-    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
-        .getChildFile ("Application Support").getChildFile ("SID Bridge").getChildFile ("Profiles");
+    migration::migrate ("SIDwire", "/Profiles");   // from SID Bridge 0.1.x
+    return migration::supportDir().getChildFile ("SIDwire").getChildFile ("Profiles");
 }
 
 void Profiles::setUserDirForTests (const juce::File& dir)
@@ -109,10 +110,10 @@ juce::File Profiles::prepareUserDir()
     auto readme = dir.getChildFile ("README.txt");
     if (! readme.existsAsFile())
         readme.replaceWithText (
-            "SID Bridge controller profiles\n"
+            "SIDwire controller profiles\n"
             "==============================\n\n"
-            "Each .toml file here is a controller profile: it tells SID Bridge what your MIDI\n"
-            "keyboard's knobs, faders, pads and buttons should do. Pick one in SID Bridge's\n"
+            "Each .toml file here is a controller profile: it tells SIDwire what your MIDI\n"
+            "keyboard's knobs, faders, pads and buttons should do. Pick one in SIDwire's\n"
             "Profile box.\n\n"
             "To make your own: copy generic.toml.example to my-keyboard.toml, change the name\n"
             "and the [[control]] entries (the format is explained at the top of the file), then\n"

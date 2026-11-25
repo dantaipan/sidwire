@@ -1,7 +1,8 @@
-// SID Bridge plugin, headless: the real processor against a fake C64U on localhost.
+// SIDwire plugin, headless: the real processor against a fake C64U on localhost.
 // Checks host-parameter -> SID, MIDI -> SID, MIDI -> parameter write-back, programs,
 // the shared instance lock and state round trips.
 #include "FakeC64U.h"
+#include "Migration.h"
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
 
@@ -487,7 +488,7 @@ TEST_CASE ("editor snapshot", "[.snapshot]")
         juce::FileOutputStream os (out);
         REQUIRE (juce::PNGImageFormat().writeImageToStream (img, os));
     };
-    auto base = juce::SystemStats::getEnvironmentVariable ("MSID_SNAPSHOT", "/tmp/sidbridge.png");
+    auto base = juce::SystemStats::getEnvironmentVariable ("MSID_SNAPSHOT", "/tmp/sidwire.png");
     editor->showTab (SidBridgeEditor::Tab::play);
     shoot (base);
     r.setPlain ("voice_mode", 5.0f);   // chord
@@ -500,7 +501,7 @@ TEST_CASE ("editor snapshot", "[.snapshot]")
     updates::UpdateChecker::fetchOverride = [] (juce::String&) {
         updates::Release rel;
         rel.version = "v0.2.0";
-        rel.pageUrl = rel.downloadUrl = "https://github.com/dantaipan/sid-bridge/releases/tag/v0.2.0";
+        rel.pageUrl = rel.downloadUrl = "https://github.com/dantaipan/sidwire/releases/tag/v0.2.0";
         rel.notes = "Faster knobs and a new pad action.\n\n## New\n\n- **MIDI learn** for pads.\n- Bigger envelope drawing.";
         return std::optional<updates::Release> (rel);
     };
@@ -517,6 +518,10 @@ int main (int argc, char* argv[])
     auto prefs = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("msid-test.updates");
     prefs.deleteFile();
     updates::UpdateChecker::prefsFileOverride = prefs;
+    // nor the old SID Bridge bundles that may be installed on this Mac
+    auto noBundles = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("msid-test-no-bundles");
+    noBundles.deleteRecursively();
+    migration::bundleRootOverride() = noBundles;
     return Catch::Session().run (argc, argv);
 }
 
@@ -832,15 +837,15 @@ TEST_CASE ("About: the title and the Setup footnote open it, Close shuts it", "[
 
 namespace {
 const char* const kLatestReleaseJson = R"({
-  "html_url": "https://github.com/dantaipan/sid-bridge/releases/tag/v0.2.0",
+  "html_url": "https://github.com/dantaipan/sidwire/releases/tag/v0.2.0",
   "tag_name": "v0.2.0",
   "draft": false,
   "prerelease": false,
   "assets": [
-    { "name": "SID-Bridge-0.2.0.zip", "browser_download_url": "https://example.com/SID-Bridge-0.2.0.zip" },
-    { "name": "SID-Bridge-0.2.0.dmg", "browser_download_url": "https://example.com/SID-Bridge-0.2.0.dmg" }
+    { "name": "SIDwire-0.2.0.zip", "browser_download_url": "https://example.com/SIDwire-0.2.0.zip" },
+    { "name": "SIDwire-0.2.0.dmg", "browser_download_url": "https://example.com/SIDwire-0.2.0.dmg" }
   ],
-  "body": "Faster knobs.\n\n## Download\n\n**[SID-Bridge-0.2.0.dmg](https://example.com/x.dmg)**: open it.\n\n## New\n\n![Shot](https://example.com/a.png)\n\n- **MIDI learn** for [pads](https://example.com).\n- Snap to `bars`.\n\nSHA-256 of the disk image: `8e87`"
+  "body": "Faster knobs.\n\n## Download\n\n**[SIDwire-0.2.0.dmg](https://example.com/x.dmg)**: open it.\n\n## New\n\n![Shot](https://example.com/a.png)\n\n- **MIDI learn** for [pads](https://example.com).\n- Snap to `bars`.\n\nSHA-256 of the disk image: `8e87`"
 })";
 }
 
@@ -860,7 +865,7 @@ TEST_CASE ("updates: GitHub's answer gives the version, notes and download (disk
     auto release = updates::parseLatestRelease (juce::JSON::parse (kLatestReleaseJson));
     REQUIRE (release.has_value());
     CHECK (release->version == "v0.2.0");
-    CHECK (release->downloadUrl == "https://example.com/SID-Bridge-0.2.0.dmg");
+    CHECK (release->downloadUrl == "https://example.com/SIDwire-0.2.0.dmg");
     auto json = juce::JSON::parse (kLatestReleaseJson);
     json.getDynamicObject()->setProperty ("assets", juce::Array<juce::var>());
     CHECK (updates::parseLatestRelease (json)->downloadUrl == release->pageUrl);
@@ -906,7 +911,7 @@ TEST_CASE ("updates: a newer release shows over the window; Skip hides it from a
     checker->skip ({});
     editor->checkForUpdates();
     CHECK (waitFor ([&] { return editor->isUpdateShowing(); }));
-    CHECK (editor->updateHeadline() == "SID Bridge 0.2.0 is available");
+    CHECK (editor->updateHeadline() == "SIDwire 0.2.0 is available");
     dynamic_cast<juce::Button*> (findById (*ed, "updateSkip"))->triggerClick();
     pump (50);
     CHECK_FALSE (editor->isUpdateShowing());
@@ -919,7 +924,7 @@ TEST_CASE ("updates: a newer release shows over the window; Skip hides it from a
 
     // nothing newer / no release yet: a manual check says so
     updates::UpdateChecker::fetchOverride = [] (juce::String& error) {
-        error = "No SID Bridge release has been published yet.";
+        error = "No SIDwire release has been published yet.";
         return std::optional<updates::Release> {};
     };
     dynamic_cast<juce::Button*> (findById (*ed, "updateLater"))->triggerClick();
@@ -1003,4 +1008,55 @@ TEST_CASE ("voice modes: a pad's next-voice-mode shows in the parameter", "[plug
     CHECK (waitFor ([&] { return r.plain ("voice_mode") == 1.0f; }));   // mono
     r.midi (juce::MidiMessage::controllerEvent (1, 85, 127));
     CHECK (waitFor ([&] { return r.plain ("voice_mode") == 2.0f; }));   // unison
+}
+
+TEST_CASE ("rename: SID Bridge's settings, profiles and update choices carry over to SIDwire once", "[plugin]")
+{
+    auto dir = juce::File::createTempFile ("support");
+    dir.createDirectory();
+    migration::supportDirOverride() = dir;
+    dir.getChildFile ("SID Bridge.settings").replaceWithText ("old settings");
+    dir.getChildFile ("SID Bridge.updates").replaceWithText ("old updates");
+    dir.getChildFile ("SID Bridge/Profiles").createDirectory();
+    dir.getChildFile ("SID Bridge/Profiles/oxygen-mine.toml").replaceWithText ("name = \"Mine\"\n");
+
+    for (auto* suffix : { ".settings", ".updates", "/Profiles" })
+        migration::migrate ("SIDwire", suffix);
+    CHECK (dir.getChildFile ("SIDwire.settings").loadFileAsString() == "old settings");
+    CHECK (dir.getChildFile ("SIDwire.updates").loadFileAsString() == "old updates");
+    CHECK (dir.getChildFile ("SIDwire/Profiles/oxygen-mine.toml").loadFileAsString().trim() == "name = \"Mine\"");
+    CHECK (dir.getChildFile ("SID Bridge.settings").existsAsFile());   // left for 0.1.x
+
+    // only once: SIDwire's own files are never overwritten
+    dir.getChildFile ("SIDwire.settings").replaceWithText ("new settings");
+    migration::migrate ("SIDwire", ".settings");
+    CHECK (dir.getChildFile ("SIDwire.settings").loadFileAsString() == "new settings");
+
+    // nothing to copy: nothing made
+    dir.getChildFile ("SID Bridge.settings").deleteFile();
+    dir.getChildFile ("SIDwire.settings").deleteFile();
+    migration::migrate ("SIDwire", ".settings");
+    CHECK (! dir.getChildFile ("SIDwire.settings").exists());
+
+    migration::supportDirOverride() = juce::File();
+    dir.deleteRecursively();
+}
+
+TEST_CASE ("rename: Setup points out an old SID Bridge plug-in that is still installed", "[plugin]")
+{
+    auto root = migration::bundleRootOverride();
+    Rig r;
+    std::unique_ptr<juce::AudioProcessorEditor> ed (r.proc.createEditor());
+    dynamic_cast<SidBridgeEditor*> (ed.get())->showTab (SidBridgeEditor::Tab::setup);
+    auto* notice = findById (*ed, "oldInstall");
+    REQUIRE (notice != nullptr);
+    CHECK_FALSE (notice->isVisible());
+
+    auto old = root.getChildFile ("Library/Audio/Plug-Ins/VST3/SID Bridge.vst3");
+    old.createDirectory();
+    REQUIRE (waitFor ([&] { return notice->isVisible(); }, 5000));
+    CHECK (migration::oldBundles().size() == 1);
+    old.deleteRecursively();
+    REQUIRE (waitFor ([&] { return ! notice->isVisible(); }, 5000));
+    root.deleteRecursively();
 }

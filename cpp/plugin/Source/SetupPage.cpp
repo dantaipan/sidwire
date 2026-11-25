@@ -1,4 +1,5 @@
 #include "SetupPage.h"
+#include "Migration.h"
 
 using namespace msid;
 using namespace ui::colours;
@@ -62,7 +63,7 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
     addAndMakeVisible (more);
     via.onChange = [this] (int) { pushSettings(); };
     video.onChange = [this] (int) { pushSettings(); };
-    via.setTooltip ("DMA needs \"Ultimate DMA Service\" on in the C64U's Network Settings; without it SID Bridge uses HTTP by itself");
+    via.setTooltip ("DMA needs \"Ultimate DMA Service\" on in the C64U's Network Settings; without it SIDwire uses HTTP by itself");
     addAndMakeVisible (via);
     addAndMakeVisible (video);
     connectButton.onClick = [this] {
@@ -113,7 +114,7 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
     addAndMakeVisible (builtinPresets);
 
     audioOut.setComponentID ("audioOutput");
-    audioOut.setTooltip ("Your audio interface: where Stream C64U audio plays. SID Bridge makes no other sound: the C64U does.");
+    audioOut.setTooltip ("Your audio interface: where Stream C64U audio plays. SIDwire makes no other sound: the C64U does.");
     audioOut.onChange = [this] {
         if (auto* dm = standalone::deviceManager(); dm != nullptr && audioOut.getSelectedId() > 0)
         {
@@ -134,14 +135,31 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
         fillAudioOutputs();
 
     footnote.setComponentID ("footnote");
-    footnote.setButtonText ("Made with JUCE" + kDot + "About SID Bridge");
-    footnote.setTooltip ("Version, and how SID Bridge and JUCE are licensed");
+    footnote.setButtonText ("Made with JUCE" + kDot + "About SIDwire");
+    footnote.setTooltip ("Version, and how SIDwire and JUCE are licensed");
     footnote.getProperties().set ("border", 0);
     footnote.setColour (juce::TextButton::buttonColourId, juce::Colours::transparentBlack);
     footnote.setColour (juce::TextButton::textColourOffId, label);
     footnote.setMouseCursor (juce::MouseCursor::PointingHandCursor);
     footnote.onClick = [this] { if (onAbout) onAbout(); };
     addAndMakeVisible (footnote);
+
+    oldInstall.setComponentID ("oldInstall");
+    oldInstall.setButtonText ("Old SID Bridge still installed: show it");
+    oldInstall.setTooltip ("SIDwire used to be called SID Bridge. Delete the old SID Bridge app and plug-ins: "
+                           "with both installed, your DAW may load the wrong one.");
+    oldInstall.setColour (juce::TextButton::textColourOffId, warn);
+    oldInstall.getProperties().set ("border", (int) warn.withAlpha (0.6f).getARGB());
+    oldInstall.onClick = [this] {
+        for (auto& f : oldBundles)
+            if (f.exists())
+            {
+                f.revealToUser();
+                break;
+            }
+    };
+    addChildComponent (oldInstall);
+    checkOldInstall();
 
     startPlaying.setComponentID ("startPlaying");
     startPlaying.setButtonText (juce::String ("Start playing") + juce::String (juce::CharPointer_UTF8 (" \xe2\x86\x92")));
@@ -155,6 +173,16 @@ SetupPage::SetupPage (SidBridgeProcessor& p) : proc (p)
 }
 
 SetupPage::~SetupPage() = default;
+
+void SetupPage::checkOldInstall()
+{
+    oldBundles = migration::oldBundles();
+    if (oldInstall.isVisible() != ! oldBundles.isEmpty())
+    {
+        oldInstall.setVisible (! oldBundles.isEmpty());
+        resized();
+    }
+}
 
 void SetupPage::fillAudioOutputs()
 {
@@ -381,6 +409,7 @@ void SetupPage::refresh (const BridgeStatus& st)
     if (++ticks % 15 == 0)
     {
         refreshPorts();
+        checkOldInstall();
         fillAudioOutputs();
         if (! notePort.isPopupActive() && notePort.getItemText (0) != notesNoneLabel())
             notePort.changeItemText (1, notesNoneLabel());
@@ -587,5 +616,7 @@ void SetupPage::resized()
     presetsName.setBounds (prow);
     c.removeFromTop (14);
     place (c, audioOutLabel, audioOut);
-    footnote.setBounds (playing.getBounds().reduced (6, 8).removeFromBottom (24));
+    auto foot = playing.getBounds().reduced (6, 8);
+    footnote.setBounds (foot.removeFromBottom (24));
+    oldInstall.setBounds (foot.removeFromBottom (30).reduced (10, 0));
 }

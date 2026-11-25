@@ -1,4 +1,4 @@
-// "About SID Bridge": version, what it is, and the JUCE licensing statement. Shown over the
+// "About SIDwire": version, what it is, and the JUCE licensing statement. Shown over the
 // window (plugin and standalone alike); the standalone app also opens it from its app menu.
 #pragma once
 
@@ -35,7 +35,7 @@ private:
     juce::TextButton close { "Close" };
 };
 
-/// "SID Bridge x.y is available": the release notes with Download / Skip This Version / Later,
+/// "SIDwire x.y is available": the release notes with Download / Skip This Version / Later,
 /// or the answer to a check that found nothing newer.
 class UpdatePanel : public juce::Component
 {

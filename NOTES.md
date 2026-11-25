@@ -565,3 +565,29 @@ The player was uninstalled from the C64 (IRQ vector back at $EA31).
   The release DMG gets it as its volume icon (`.VolumeIcon.icns` + `SetFile -a C`).
 - Small sizes: at 32 px the chip, "SID" and the coloured wave read; at 16 px it's a chip shape
   with a coloured line.
+
+## Renamed SID Bridge → SIDwire — 2026-11-24
+- Why: "C64 Bridge" (a remote-control/MCP tool for the C64U, not music) has a confusingly close
+  name. The user chose SIDwire; no product of that name was found, and the GitHub name was free.
+  Older entries above keep the old name.
+- What changed: `PRODUCT_NAME "SIDwire"`, so the bundles are SIDwire.app / .component / .vst3
+  and `JucePlugin_Name` is "SIDwire"; every visible string; the update URL
+  (`api.github.com/repos/dantaipan/sidwire/releases/latest`; GitHub redirects the old one, so
+  0.1.x apps still find new releases); User-Agent `SIDwire/<ver>`; release script and DMG
+  `SIDwire-<ver>.dmg`; README screenshots `docs/sidwire-{plugin,setup}.png`.
+- **Kept on purpose:** `PLUGIN_MANUFACTURER_CODE Msid`, `PLUGIN_CODE Sidb`, `BUNDLE_ID
+  com.midisid.sidbridge`, `COMPANY_NAME "MidiSid"`. The VST3 class IDs in moduleinfo.json are
+  identical to 0.1.1's (`ABCDEF019182FAEB4D73696453696462` processor), and the AU is still
+  `aumu Sidb Msid` (now named "MidiSid: SIDwire"), so DAW projects reopen with their state.
+  Internal names (CMake target `SidBridge`, `SidBridgeProcessor`, `SidBridge_artefacts`,
+  `sidbridge-tests`) are unchanged: invisible to users. The lock file stays
+  `/tmp/midi-sid-bridge-<host>.lock`, so 0.1.x, SIDwire and bridge.py still exclude each other.
+- Migration (`cpp/plugin/Source/Migration.h`): on first use SIDwire copies
+  `~/Library/Application Support/SID Bridge.settings`, `SID Bridge.updates` and
+  `SID Bridge/Profiles` to the SIDwire names, only when the new one doesn't exist; the old files
+  stay, so going back to 0.1.x works.
+- Setup shows "Old SID Bridge still installed: show it" (reveals it in Finder) while an old
+  SID Bridge.app / .component / .vst3 is in /Applications, ~/Applications or
+  {~,}/Library/Audio/Plug-Ins: both have the same codes, so a DAW may load either. Rechecked
+  about once a second while Setup is open. Tests point the search at an empty folder.
+- Version 0.2.0. Tests: C++ 81 (new: migration, old-install notice), auval, pluginval 10.

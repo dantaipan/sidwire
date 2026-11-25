@@ -66,7 +66,7 @@ bool BridgeSettings::operator== (const BridgeSettings& o) const
 // ---------------------------------------------------------------- lifecycle
 
 BridgeController::BridgeController (BridgeParams p, std::vector<Preset> presets)
-    : juce::Thread ("SID bridge"), params (p), builtinPresets (std::move (presets))
+    : juce::Thread ("SIDwire"), params (p), builtinPresets (std::move (presets))
 {
     presetList = builtinPresets;
     lastParam.fill (-1);
@@ -305,7 +305,7 @@ void BridgeController::saveProfile (Profile p, const juce::String& message)
     auto dir = Profiles::userDir();
     dir.createDirectory();
     auto file = dir.getChildFile (id + ".toml");
-    bool ok = file.replaceWithText (juce::String (profileToToml (p, "Controller profile written by SID Bridge (MIDI learn).\n"
+    bool ok = file.replaceWithText (juce::String (profileToToml (p, "Controller profile written by SIDwire (MIDI learn).\n"
                                                                    "Format: see generic.toml.example in this folder.")));
     engine->setProfile (p);
     {

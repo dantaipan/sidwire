@@ -1,7 +1,7 @@
 #!/bin/bash
-# Builds SID Bridge for distribution: the standalone app, the Audio Unit and the VST3, universal
+# Builds SIDwire for distribution: the standalone app, the Audio Unit and the VST3, universal
 # (Apple Silicon + Intel), signed with Developer ID (hardened runtime), notarized and stapled,
-# inside a signed, notarized and stapled disk image: dist/SID-Bridge-<version>.dmg.
+# inside a signed, notarized and stapled disk image: dist/SIDwire-<version>.dmg.
 #
 # Needs Xcode command line tools, CMake + Ninja, a "Developer ID Application" certificate in the
 # keychain, and notarytool credentials saved under a keychain profile:
@@ -10,7 +10,7 @@
 # RoughTrack's release script).
 #
 # The version is the CMake project version (cpp/CMakeLists.txt), which the About box and the
-# update checker use. Publish the disk image on github.com/dantaipan/sid-bridge as release
+# update checker use. Publish the disk image on github.com/dantaipan/sidwire as release
 # v<version> so the update checker finds it.
 
 set -euo pipefail
@@ -45,15 +45,15 @@ fi
 rm -rf "$work"
 mkdir -p "$work"
 
-echo "== Building SID Bridge $version (universal)"
+echo "== Building SIDwire $version (universal)"
 (cd cpp && cmake --preset dist >/dev/null && cmake --build --preset dist)
 
-app="$work/SID Bridge.app"
-au="$work/SID Bridge.component"
-vst3="$work/SID Bridge.vst3"
-ditto "$artefacts/Standalone/SID Bridge.app" "$app"
-ditto "$artefacts/AU/SID Bridge.component" "$au"
-ditto "$artefacts/VST3/SID Bridge.vst3" "$vst3"
+app="$work/SIDwire.app"
+au="$work/SIDwire.component"
+vst3="$work/SIDwire.vst3"
+ditto "$artefacts/Standalone/SIDwire.app" "$app"
+ditto "$artefacts/AU/SIDwire.component" "$au"
+ditto "$artefacts/VST3/SIDwire.vst3" "$vst3"
 
 echo "== Signing"
 for bundle in "$app" "$au" "$vst3"; do
@@ -61,11 +61,11 @@ for bundle in "$app" "$au" "$vst3"; do
     codesign --verify --strict --verbose=1 "$bundle"
 done
 codesign --display --verbose=2 "$app" 2>&1 | grep -E "Authority=Developer ID Application|Timestamp=|flags=.*runtime"
-lipo -archs "$app/Contents/MacOS/SID Bridge"
+lipo -archs "$app/Contents/MacOS/SIDwire"
 
 echo "== Notarizing the app and plug-ins"
-(cd "$work" && ditto -c -k --keepParent "SID Bridge.app" bundles.zip \
-    && zip -qry bundles.zip "SID Bridge.component" "SID Bridge.vst3")
+(cd "$work" && ditto -c -k --keepParent "SIDwire.app" bundles.zip \
+    && zip -qry bundles.zip "SIDwire.component" "SIDwire.vst3")
 xcrun notarytool submit "$work/bundles.zip" --keychain-profile "$profile" --wait
 for bundle in "$app" "$au" "$vst3"; do
     xcrun stapler staple "$bundle"
@@ -74,19 +74,19 @@ done
 echo "== Making the disk image"
 image="$work/image"
 mkdir -p "$image/Plug-ins"
-ditto "$app" "$image/SID Bridge.app"
-ditto "$au" "$image/Plug-ins/SID Bridge.component"
-ditto "$vst3" "$image/Plug-ins/SID Bridge.vst3"
+ditto "$app" "$image/SIDwire.app"
+ditto "$au" "$image/Plug-ins/SIDwire.component"
+ditto "$vst3" "$image/Plug-ins/SIDwire.vst3"
 ln -s /Applications "$image/Applications"
 ln -s /Library/Audio/Plug-Ins/Components "$image/Plug-ins/Audio Unit folder"
 ln -s /Library/Audio/Plug-Ins/VST3 "$image/Plug-ins/VST3 folder"
 sed "s/@VERSION@/$version/g" tools/dmg-readme.txt > "$image/Read Me.txt"
 
-dmg="$out/SID-Bridge-$version.dmg"
+dmg="$out/SIDwire-$version.dmg"
 rm -f "$dmg"
 # a writable image first, so the volume can get the app's icon; then compress it
 rw="$work/rw.dmg"
-hdiutil create -volname "SID Bridge $version" -srcfolder "$image" -fs HFS+ -format UDRW "$rw" >/dev/null
+hdiutil create -volname "SIDwire $version" -srcfolder "$image" -fs HFS+ -format UDRW "$rw" >/dev/null
 mount=$(hdiutil attach -readwrite -noverify -nobrowse "$rw" | tail -1 | awk -F'\t' '{print $NF}')
 cp "$app/Contents/Resources/AppIcon.icns" "$mount/.VolumeIcon.icns"
 xcrun SetFile -a C "$mount"

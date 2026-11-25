@@ -6,7 +6,7 @@ times and finds each note's onset. The audio-stream delay is the same for every 
 so differences between targets are real; absolute numbers include the stream's buffering.
 
   .venv/bin/python tools/e2e_latency.py python      # bridge.py
-  .venv/bin/python tools/e2e_latency.py plugin      # SID Bridge standalone app
+  .venv/bin/python tools/e2e_latency.py plugin      # SIDwire standalone app
   .venv/bin/python tools/e2e_latency.py none        # just play into whatever already listens
 Extra checks with --checks: 6-voice chord pitches, encoder sweep, preset change.
 """
@@ -28,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 import listen  # noqa: E402
 
 HOST = os.environ.get("MSID_HW_HOST") or listen.load_host()   # the C64U: env, or config(.local).toml
-APP = ROOT / "cpp/build/release/plugin/SidBridge_artefacts/Release/Standalone/SID Bridge.app/Contents/MacOS/SID Bridge"
+APP = ROOT / "cpp/build/release/plugin/SidBridge_artefacts/Release/Standalone/SIDwire.app/Contents/MacOS/SIDwire"
 NOTE_PORT, ENC_PORT = "MSID Test Notes", "MSID Test Knobs"
 
 

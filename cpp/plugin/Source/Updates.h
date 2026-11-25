@@ -1,4 +1,4 @@
-// Finding out whether a newer SID Bridge is out, from its GitHub releases (the same way as
+// Finding out whether a newer SIDwire is out, from its GitHub releases (the same way as
 // RoughTrack). Nothing is sent beyond an ordinary request for the latest release.
 //
 // The standalone app checks by itself once a day for each version (it can be switched off) and
@@ -18,7 +18,7 @@
 namespace updates {
 
 /// Where to ask for the latest release. Left empty, no request is ever made.
-inline constexpr auto latestReleaseUrl = "https://api.github.com/repos/dantaipan/sid-bridge/releases/latest";
+inline constexpr auto latestReleaseUrl = "https://api.github.com/repos/dantaipan/sidwire/releases/latest";
 
 inline bool isUpdateCheckingAvailable() { return juce::String (latestReleaseUrl).isNotEmpty(); }
 
@@ -68,7 +68,7 @@ std::optional<Release> fetchLatestRelease (juce::String& error);
 
 /// One per process (juce::SharedResourcePointer): runs checks in the background and keeps the
 /// preferences (automatic on/off, last check, skipped version) in
-/// ~/Library/Application Support/SID Bridge.updates.
+/// ~/Library/Application Support/SIDwire.updates.
 class UpdateChecker
 {
 public:

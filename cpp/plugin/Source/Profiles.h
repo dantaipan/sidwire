@@ -1,5 +1,5 @@
 // Controller profiles in the plugin: the built-in ones (profiles/*.toml, compiled in) plus the
-// user's own files in ~/Library/Application Support/SID Bridge/Profiles. A user file with the
+// user's own files in ~/Library/Application Support/SIDwire/Profiles. A user file with the
 // same name (file stem) as a built-in replaces it. Format: profiles/generic.toml.
 #pragma once
 

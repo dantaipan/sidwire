@@ -135,7 +135,7 @@ def acquire_instance_lock(path: Path) -> None:
         f.seek(0)
         pid = f.read().strip() or "?"
         sys.exit(f"Another bridge is already driving this C64U (pid {pid}) — a bridge.py or the "
-                 "SID Bridge plugin. Quit it first: two bridges fight over the same SID voices.")
+                 "SIDwire plugin. Quit it first: two bridges fight over the same SID voices.")
     f.seek(0); f.truncate(); f.write(str(os.getpid())); f.flush()
     _lock_file = f   # keep open: the lock lives as long as this process
 

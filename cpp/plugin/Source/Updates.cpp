@@ -1,4 +1,5 @@
 #include "Updates.h"
+#include "Migration.h"
 
 namespace updates {
 
@@ -188,7 +189,7 @@ std::optional<Release> fetchLatestRelease (juce::String& error)
     // GitHub asks every request to say what it comes from
     int status = 0;
     const auto options = juce::URL::InputStreamOptions (juce::URL::ParameterHandling::inAddress)
-                             .withExtraHeaders ("Accept: application/vnd.github+json\r\nUser-Agent: SID-Bridge/" + currentVersion())
+                             .withExtraHeaders ("Accept: application/vnd.github+json\r\nUser-Agent: SIDwire/" + currentVersion())
                              .withConnectionTimeoutMs (timeoutMs)
                              .withStatusCode (&status);
     const auto stream = juce::URL (latestReleaseUrl).createInputStream (options);
@@ -200,7 +201,7 @@ std::optional<Release> fetchLatestRelease (juce::String& error)
     const auto body = stream->readEntireStreamAsString();
     if (status == 404)
     {
-        error = "No SID Bridge release has been published yet.";
+        error = "No SIDwire release has been published yet.";
         return std::nullopt;
     }
     const auto release = parseLatestRelease (juce::JSON::parse (body));
@@ -223,10 +224,12 @@ constexpr auto kSkipped = "skippedVersion";
 UpdateChecker::UpdateChecker()
 {
     juce::PropertiesFile::Options o;
-    o.applicationName = "SID Bridge";
+    o.applicationName = "SIDwire";
     o.filenameSuffix = ".updates";
     o.osxLibrarySubFolder = "Application Support";
     o.folderName = "";
+    if (prefsFileOverride == juce::File())
+        migration::migrate ("SIDwire", ".updates");   // from SID Bridge 0.1.x
     prefs = prefsFileOverride != juce::File() ? std::make_unique<juce::PropertiesFile> (prefsFileOverride, o)
                                               : std::make_unique<juce::PropertiesFile> (o);
 }
